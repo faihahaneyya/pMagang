@@ -1,66 +1,200 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Informasi Inventaris Sewa Beli — PT Banyan Koalindo Lestari
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi manajemen inventaris kantor dan pelacakan kontrak sewa beli berbasis QR Code dan Barcode Code 128. Dibangun dengan arsitektur **terpisah**:
+- **Backend:** Laravel 12 (REST API, generator barcode/QR vektor, ekspor PDF/Excel, Blade label print) di folder `backend/`.
+- **Frontend:** React 19 + Vite (Single Page Application modern, dashboard statistik, CRUD inventaris & kontrak, scan publik aset) di folder `frontend/`.
 
-## About Laravel
+Pengguna dan administrator cukup mengakses **satu alamat web** (Single Web Address) tanpa perlu berpindah-pindah port.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📋 Persyaratan Sistem
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **PHP:** Versi 8.2 atau lebih baru (dengan ekstensi `pdo_mysql`, `gd`, `openssl`, `mbstring`, `bcmath`, `fileinfo`)
+- **Composer:** Versi 2.x
+- **Node.js:** Versi 18.x atau lebih baru & **npm**
+- **Database:** MySQL / MariaDB (Database default: `inventaris_sewa_beli`)
+- **Web Server (Produksi):** Nginx (direkomendasikan) atau Apache / Laragon
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🚀 1. Cara Menjalankan Development (Satu Perintah dari Root)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Untuk memudahkan pengembangan, Anda **tidak perlu** membuka dua terminal terpisah. Cukup jalankan satu perintah dari folder root `C:\pMagang`:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```powershell
+# Dari direktori root C:\pMagang:
+npm run dev
+```
 
-## Laravel Sponsors
+Perintah ini akan secara otomatis menjalankan:
+1. **Backend Laravel:** `php artisan serve` pada `http://localhost:8000` (hanya diakses via internal proxy).
+2. **Frontend React + Vite:** `vite --host` pada port `5173`.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 🌐 Akses Aplikasi
+Buka browser dan buka alamat frontend:
+- **Alamat Aplikasi:** [http://localhost:5173](http://localhost:5173)
+- Halaman Publik Scan Aset: `http://localhost:5173/aset/{kode_inventaris}`
+- Cetak Label Satuan: `http://localhost:5173/admin/barcode/{kode_inventaris}/print`
+- Cetak Label Massal: `http://localhost:5173/admin/barcode/print-all`
 
-### Premium Partners
+Semua request `/api`, `/storage`, dan `/admin/barcode` secara otomatis diteruskan oleh Vite Proxy ke backend Laravel di port 8000.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+---
 
-## Contributing
+## 📱 2. Cara Tes Scan QR dari Smartphone (HP di Wi-Fi Lokal)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Agar QR Code pada label inventaris dapat dipindai langsung dari kamera HP dan membuka halaman informasi aset, ikuti langkah berikut:
 
-## Code of Conduct
+### Langkah A: Cari IP Lokal Laptop Anda
+Buka PowerShell atau Command Prompt pada laptop, lalu ketik:
+```powershell
+ipconfig
+```
+Cari bagian **IPv4 Address** pada adapter Wi-Fi Anda, misalnya: `192.168.1.116`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Langkah B: Perbarui `FRONTEND_URL` di Backend
+Buka berkas `backend/.env` dan ubah `FRONTEND_URL` menggunakan IP laptop Anda:
+```env
+FRONTEND_URL=http://192.168.1.116:5173
+```
+Setelah mengubah `.env`, bersihkan cache konfigurasi Laravel:
+```powershell
+cd C:\pMagang\backend
+php artisan config:clear
+```
+*(Langkah ini memastikan setiap QR Code yang dibuat mengodekan URL yang dapat dijangkau oleh perangkat lain di jaringan Wi-Fi, bukan `localhost`).*
 
-## Security Vulnerabilities
+### Langkah C: Izinkan Port 5173 di Windows Firewall
+Agar smartphone dapat mengakses port Vite (5173) di laptop Anda:
+1. Buka PowerShell sebagai **Administrator**.
+2. Jalankan perintah pembuatan aturan masuk (Inbound Rule):
+   ```powershell
+   New-NetFirewallRule -DisplayName "Vite Dev Server (Port 5173)" -Direction Inbound -LocalPort 5173 -Protocol TCP -Action Allow
+   ```
+   *(Atau secara manual izinkan aplikasi `Node.js` pada menu Windows Defender Firewall).*
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Langkah D: Pindai Label dengan Smartphone
+1. Pastikan smartphone dan laptop terhubung ke **jaringan Wi-Fi yang sama**.
+2. Jalankan aplikasi dengan `npm run dev` di root.
+3. Buka halaman cetak label di laptop (`http://localhost:5173/admin/barcode/INV-IT-001/print`).
+4. Arahkan kamera smartphone ke QR Code yang tampil di layar atau label yang dicetak.
+5. Smartphone akan otomatis membuka URL `http://192.168.1.116:5173/aset/INV-IT-001` dan menampilkan rincian spesifikasi aset kantor PT Banyan Koalindo Lestari secara responsif.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 🔒 3. Pembuatan Akun Administrator Pertama
+
+Jika database tabel `users` masih kosong, buat akun administrator pertama melalui terminal:
+
+```powershell
+cd C:\pMagang\backend
+php artisan make:admin
+```
+Masukkan nama lengkap, alamat email, dan kata sandi Anda secara interaktif (input password aman dan tersembunyi).
+
+---
+
+## 🚢 4. Langkah Deploy ke Server Produksi (Single-Origin)
+
+Pada server produksi, seluruh frontend dan backend disajikan di bawah satu domain (misalnya `https://inventaris.bkl.co.id`) menggunakan reverse proxy web server.
+
+### Tahap 1: Build Aset Frontend React
+Jalankan perintah build dari root:
+```bash
+npm run build:frontend
+```
+Hasil build statis akan tersimpan di folder `frontend/dist/`.
+
+### Tahap 2: Persiapan Backend Laravel
+Masuk ke folder `backend/` pada server produksi:
+```bash
+cd backend
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan storage:link
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+Pastikan pengaturan `.env` produksi:
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://inventaris.bkl.co.id
+FRONTEND_URL=https://inventaris.bkl.co.id
+```
+
+### Tahap 3: Konfigurasi Web Server
+
+#### A. Menggunakan Nginx (LEMP Stack)
+Salin berkas `nginx.conf.example` ke konfigurasi Nginx Anda (`/etc/nginx/sites-available/inventaris.conf`):
+- `root` diarahkan ke berkas statis React: `/var/www/pMagang/frontend/dist`
+- Blok `location ^~ /api` dan `location ^~ /admin/barcode` diteruskan ke `backend/public/index.php` via FastCGI.
+- Blok `location ^~ /storage/` melayani file unggahan foto barang langsung.
+- Blok `location /` mengarahkan semua rute SPA ke `index.html`.
+- **Penting:** Pastikan socket PHP-FPM disesuaikan dengan versi PHP di server Anda (misal `unix:/run/php/php8.2-fpm.sock` atau `php8.3-fpm.sock`).
+
+#### B. Menggunakan Apache / Laragon / XAMPP
+Gunakan template virtual host pada `apache.conf.example`:
+- `DocumentRoot` diarahkan ke `frontend/dist`.
+- Gunakan direktif `Alias /api` dan `Alias /admin/barcode` ke folder `backend/public`.
+- Gunakan direktif `Alias /storage` ke folder `backend/storage/app/public`.
+- Aturan `RewriteCond %{REQUEST_URI} !^/(api|storage|admin/barcode)` pada DocumentRoot memastikan panggilan backend tidak jatuh ke SPA `index.html`.
+
+---
+
+## 💾 5. Panduan Backup Database & Berkas Upload Sebelum Deployment
+
+Sebelum melakukan deployment, migrasi database, atau pemeliharaan server produksi, **wajib** melakukan pencadangan (backup) data dan aset:
+
+### A. Pencadangan Database MySQL
+Jalankan utilitas `mysqldump` dari terminal server:
+```bash
+# Backup terkompresi dengan stempel waktu:
+mysqldump -u [username_db] -p inventaris_sewa_beli | gzip > backup_inventaris_$(date +%Y%m%d_%H%M%S).sql.gz
+```
+*Prosedur pemulihan (restore) database bila diperlukan:*
+```bash
+gunzip < backup_inventaris_YYYYMMDD_HHMMSS.sql.gz | mysql -u [username_db] -p inventaris_sewa_beli
+```
+
+### B. Pencadangan Berkas Foto Fisik Inventaris
+Arsipkan seluruh berkas foto aset yang diunggah ke folder `storage`:
+```bash
+tar -czvf backup_photos_$(date +%Y%m%d_%H%M%S).tar.gz -C backend/storage/app/public .
+```
+*Prosedur pemulihan berkas foto:*
+```bash
+tar -xzvf backup_photos_YYYYMMDD_HHMMSS.tar.gz -C backend/storage/app/public/
+```
+
+### C. Checklist Hak Akses Berkas di Server (Permissions)
+Pastikan user web server (`www-data` / `nginx` / `apache`) memiliki izin tulis pada direktori cache dan penyimpanan:
+```bash
+sudo chown -R www-data:www-data /var/www/pMagang/backend/storage /var/www/pMagang/backend/bootstrap/cache
+sudo chmod -R 775 /var/www/pMagang/backend/storage /var/www/pMagang/backend/bootstrap/cache
+```
+
+---
+
+## 🧪 6. Menjalankan Pengujian (Testing)
+
+Untuk memastikan seluruh modul backend berfungsi dengan baik dan bebas dari regresi:
+
+```powershell
+# Jalankan seluruh test suite backend Laravel:
+cd C:\pMagang\backend
+php artisan test
+```
+
+Untuk menguji build frontend:
+```powershell
+# Dari direktori root C:\pMagang:
+npm run build:frontend
+```
+
+---
+
+## 👥 Hak Cipta & Pengembang
+**PT Banyan Koalindo Lestari** — Sistem Informasi Inventaris Sewa Beli.

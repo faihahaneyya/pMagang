@@ -1,0 +1,88 @@
+# ==============================================================================
+# Apache / Laragon / XAMPP VirtualHost Template
+# Sistem Informasi Inventaris Sewa Beli — PT Banyan Koalindo Lestari
+# Arsitektur: Single-Origin Deployment (Frontend React dist + Backend Laravel API)
+#
+# PERINGATAN KEAMANAN PENTING:
+# JANGAN PERNAH mengarahkan 'DocumentRoot' ke folder root proyek (seperti
+# C:/pMagang atau /var/www/pMagang). DocumentRoot harus selalu mengarah ke
+# 'frontend/dist' (untuk SPA) atau 'backend/public' (jika deploy backend saja),
+# agar berkas .env, source code, dan direktori penyimpanan aman dari akses publik.
+# ==============================================================================
+
+<VirtualHost *:80>
+    ServerName inventaris.bkl.co.id
+    # ServerAlias inventaris.local
+
+    # 1. FRONTEND: Sajikan hasil build React dari frontend/dist
+    DocumentRoot "C:/pMagang/frontend/dist"
+
+    <Directory "C:/pMagang/frontend/dist">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+
+        # SPA Routing: Arahkan navigasi halaman non-file ke index.html
+        RewriteEngine On
+        RewriteBase /
+        RewriteRule ^index\.html$ - [L]
+
+        # PENTING: Jangan arahkan /api, /storage, atau /admin/barcode ke index.html
+        RewriteCond %{REQUEST_URI} !^/(api|storage|admin/barcode)
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule . /index.html [L]
+    </Directory>
+
+    # ==========================================================================
+    # 2. BACKEND API: Alias /api diteruskan ke Laravel public
+    # ==========================================================================
+    Alias /api "C:/pMagang/backend/public"
+
+    # ==========================================================================
+    # 3. CETAK LABEL BARCODE & QR: Alias /admin/barcode diteruskan ke Laravel
+    # Memastikan URL seperti /admin/barcode/INV-IT-001/print ditangani oleh Laravel
+    # ==========================================================================
+    Alias /admin/barcode "C:/pMagang/backend/public"
+
+    <Directory "C:/pMagang/backend/public">
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Require all granted
+
+        # Front Controller Laravel
+        RewriteEngine On
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule ^ index.php [L]
+    </Directory>
+
+    # ==========================================================================
+    # 4. STORAGE: Sajikan file foto fisik aset inventaris langsung
+    # ==========================================================================
+    Alias /storage "C:/pMagang/backend/storage/app/public"
+    <Directory "C:/pMagang/backend/storage/app/public">
+        Options -Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    # ==========================================================================
+    # 5. KEAMANAN: Blokir akses langsung ke berkas tersembunyi (.env, .git, dll)
+    # ==========================================================================
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</VirtualHost>
+
+# ==============================================================================
+# CATATAN VERSI PHP / PHP-FPM PADA APACHE:
+# Bila Apache menggunakan mod_proxy_fcgi (misal di Ubuntu/Debian Linux):
+# Sesuaikan socket PHP-FPM dengan versi PHP yang aktif di server:
+#
+# <FilesMatch \.php$>
+#     SetHandler "proxy:unix:/run/php/php8.2-fpm.sock|fcgi://localhost/"
+#     # Atau: /run/php/php8.3-fpm.sock / php8.4-fpm.sock
+# </FilesMatch>
+# ==============================================================================
+

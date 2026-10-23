@@ -1,0 +1,125 @@
+# ==============================================================================
+# Nginx Configuration Template — Sistem Informasi Inventaris Sewa Beli
+# PT Banyan Koalindo Lestari
+# Arsitektur: Single-Origin Deployment (Frontend React dist + Backend Laravel API)
+#
+# PERINGATAN KEAMANAN PENTING:
+# JANGAN PERNAH mengarahkan direktif 'root' web server ke folder root proyek
+# (seperti /var/www/pMagang atau C:/pMagang). Selalu arahkan ke 'frontend/dist'
+# untuk berkas SPA dan 'backend/public' untuk Laravel, agar berkas .env,
+# direktori internal, dan repositori .git tidak dapat diakses oleh publik.
+# ==============================================================================
+
+server {
+    listen 80;
+    server_name inventaris.bkl.co.id; # Ganti dengan domain atau IP server Anda
+
+    # Aktifkan redirect ke HTTPS bila sertifikat SSL/TLS sudah terpasang
+    # return 301 https://$host$request_uri;
+
+    # 1. FRONTEND: Sajikan berkas statis React hasil build (npm run build:frontend)
+    root /var/www/pMagang/frontend/dist;
+    index index.html;
+
+    charset utf-8;
+    client_max_body_size 25M;
+
+    # Kompresi Gzip untuk mempercepat muat aset JS/CSS
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;
+
+    # ==========================================================================
+    # 2. BACKEND API: Teruskan semua request /api ke Laravel (public/index.php)
+    # CATATAN TEKNIS:
+    # Hindari pola "alias + try_files" di sub-location Nginx karena memiliki
+    # bug pemetaan path bawaan Nginx. Cara paling stabil dan bersih untuk Laravel
+    # adalah meneruskan request /api langsung ke front controller index.php.
+    # ==========================================================================
+    location ^~ /api {
+        include fastcgi_params;
+
+        # ----------------------------------------------------------------------
+        # PENTING (SOCKET PHP-FPM):
+        # Sesuaikan path socket php-fpm berikut dengan versi PHP di server Anda!
+        # Cek versi PHP aktif dengan: php -v
+        # Cek file socket yang ada dengan: ls -la /run/php/
+        # Contoh nama socket umum:
+        #   - PHP 8.2: unix:/run/php/php8.2-fpm.sock
+        #   - PHP 8.3: unix:/run/php/php8.3-fpm.sock
+        #   - PHP 8.4: unix:/run/php/php8.4-fpm.sock
+        #   - RHEL/AlmaLinux: unix:/var/run/php-fpm/www.sock
+        #   - Atau via port TCP: 127.0.0.1:9000
+        # ----------------------------------------------------------------------
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME /var/www/pMagang/backend/public/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param REQUEST_URI $request_uri;
+        fastcgi_param DOCUMENT_ROOT /var/www/pMagang/backend/public;
+    }
+
+    # ==========================================================================
+    # 3. BACKEND STORAGE: Sajikan file foto fisik aset inventaris langsung
+    # ==========================================================================
+    location ^~ /storage/ {
+        alias /var/www/pMagang/backend/storage/app/public/;
+        try_files $uri =404;
+        expires 30d;
+        access_log off;
+    }
+
+    # ==========================================================================
+    # 4. CETAK LABEL BARCODE & QR: Teruskan /admin/barcode ke Laravel
+    # ATURAN INI SANGAT PENTING:
+    # Memastikan URL cetak label (/admin/barcode/{kode}/print dan /admin/barcode/print-all)
+    # diproses langsung oleh BarcodeController Laravel, TIDAK jatuh ke index.html React!
+    # ==========================================================================
+    location ^~ /admin/barcode {
+        include fastcgi_params;
+
+        # PENTING: Sesuaikan socket php-fpm dengan versi PHP di server Anda
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME /var/www/pMagang/backend/public/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param REQUEST_URI $request_uri;
+        fastcgi_param DOCUMENT_ROOT /var/www/pMagang/backend/public;
+    }
+
+    # ==========================================================================
+    # 5. SPA ROUTING (REACT): Semua rute halaman (/aset/:kode, /dashboard, dll)
+    # dialihkan ke index.html agar React Router yang memproses navigasi di browser.
+    # ==========================================================================
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Blokir akses ke file sensitif atau tersembunyi (.git, .env, .htaccess, dll)
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+
+# ==============================================================================
+# OPSIONAL: Alternatif Reverse Proxy (bila Laravel dijalankan via artisan serve/Octane)
+# ==============================================================================
+# Bila Laravel dijalankan sebagai background service di port 8000:
+#
+# location ^~ /api {
+#     proxy_pass http://127.0.0.1:8000;
+#     proxy_set_header Host $host;
+#     proxy_set_header X-Real-IP $remote_addr;
+#     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#     proxy_set_header X-Forwarded-Proto $scheme;
+# }
+# location ^~ /admin/barcode {
+#     proxy_pass http://127.0.0.1:8000;
+#     proxy_set_header Host $host;
+#     proxy_set_header X-Real-IP $remote_addr;
+#     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#     proxy_set_header X-Forwarded-Proto $scheme;
+# }
+# ==============================================================================
+

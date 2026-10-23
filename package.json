@@ -1,16 +1,16 @@
 {
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "vite build",
-        "dev": "vite"
-    },
-    "devDependencies": {
-        "@tailwindcss/vite": "^4.0.0",
-        "axios": "^1.7.4",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^1.2.0",
-        "tailwindcss": "^4.0.0",
-        "vite": "^6.0.11"
-    }
+  "name": "pt-bkl-inventaris-sewa-beli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistem Informasi Inventaris Sewa Beli PT Banyan Koalindo Lestari",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run serve",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" --kill-others-on-fail \"npm --prefix backend run serve\" \"npm --prefix frontend run dev\"",
+    "build:frontend": "npm --prefix frontend run build",
+    "test:backend": "php backend/artisan test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }
