@@ -428,26 +428,26 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
   return (
     <div className="space-y-6">
       {/* 1. HEADER HALAMAN & ACTIONS */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
         <div>
           <div className="flex items-center space-x-2 text-xs text-[#6B7280] mb-1">
             <span>Dashboard</span>
             <span>/</span>
-            <span className="text-[#F05D24] font-semibold">Data Inventaris</span>
+            <span className="text-[#176B7A] font-semibold">Data Inventaris</span>
           </div>
           <h2 className="text-xl font-extrabold text-gray-900 tracking-tight flex items-center space-x-2.5">
-            <Boxes className="w-6 h-6 text-[#F05D24]" />
+            <Boxes className="w-6 h-6 text-[#176B7A]" />
             <span>Kelola Data Inventaris</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F05D24]/10 text-[#F05D24] border border-[#F05D24]/20">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#176B7A]/10 text-[#176B7A] border border-[#176B7A]/20">
               {meta.total} Total Unit
             </span>
           </h2>
           <p className="text-xs text-[#6B7280] mt-0.5">
-            Manajemen unit alat berat, elektronik, dan aset sewa beli PT Banyan Koalindo Lestari
+            Manajemen unit alat berat, elektronik, dan aset operasional PT Banyan Koalindo Lestari
           </p>
         </div>
 
-        <div className="flex items-center space-x-2.5 w-full sm:w-auto">
+        <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto">
           <button
             type="button"
             id="btn-refresh-inventaris"
@@ -456,7 +456,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
             className="p-2.5 rounded-xl border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
             title="Muat Ulang Data"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#F05D24]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#176B7A]' : ''}`} />
           </button>
 
           <a
@@ -464,10 +464,10 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
             target="_blank"
             rel="noopener noreferrer"
             id="btn-print-all-barcode"
-            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-xs transition-colors"
+            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-2xs transition-colors"
             title="Cetak Semua Label QR Code"
           >
-            <Printer className="w-4 h-4 text-[#F05D24]" />
+            <Printer className="w-4 h-4 text-[#176B7A]" />
             <span className="hidden md:inline">Cetak Semua QR Code</span>
           </a>
 
@@ -476,11 +476,11 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
               type="button"
               onClick={onOpenScanner}
               id="btn-scan-barcode-inventaris"
-              className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-xs transition-colors"
+              className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-2xs transition-colors"
               title="Pindai Label QR Code Menggunakan Kamera"
             >
-              <Camera className="w-4 h-4 text-[#F05D24]" />
-              <span className="hidden md:inline">Pindai QR Code</span>
+              <Camera className="w-4 h-4 text-[#176B7A]" />
+              <span className="hidden md:inline">Pindai QR</span>
             </button>
           )}
 
@@ -492,10 +492,10 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
               ...(filterKategori ? { kategori: filterKategori } : {}),
             }).toString()}`}
             id="btn-export-inventaris-pdf"
-            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 text-gray-700 hover:text-[#F05D24] font-semibold text-xs shadow-xs transition-colors"
+            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-slate-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-2xs transition-colors"
             title="Unduh Laporan Inventaris format PDF"
           >
-            <Download className="w-4 h-4 text-[#F05D24]" />
+            <Download className="w-4 h-4 text-[#F15A24]" />
             <span className="hidden xl:inline">Export PDF</span>
           </a>
 
@@ -507,10 +507,10 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
               ...(filterKategori ? { kategori: filterKategori } : {}),
             }).toString()}`}
             id="btn-export-inventaris-excel"
-            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 text-gray-700 hover:text-[#F05D24] font-semibold text-xs shadow-xs transition-colors"
+            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-slate-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-2xs transition-colors"
             title="Unduh Laporan Inventaris format Excel (XLSX)"
           >
-            <Download className="w-4 h-4 text-[#F05D24]" />
+            <Download className="w-4 h-4 text-emerald-600" />
             <span className="hidden xl:inline">Export Excel</span>
           </a>
 
@@ -518,7 +518,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
             type="button"
             id="btn-tambah-inventaris"
             onClick={handleOpenCreate}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#F05D24] to-[#d84a15] hover:from-[#d84a15] hover:to-[#bf3e0f] text-white font-bold text-xs shadow-md transition-all duration-200"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-[#F15A24] hover:bg-[#d84a15] text-white font-bold text-xs shadow-xs transition-all duration-200"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Inventaris</span>
@@ -532,21 +532,21 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
           id="inventaris-alert-box"
           className={`p-4 rounded-2xl flex items-start space-x-3 text-xs sm:text-sm border shadow-xs animate-fadeIn ${
             alert.type === 'success'
-              ? 'bg-orange-50 border-orange-200 text-orange-950'
-              : 'bg-orange-100/70 border-orange-300 text-orange-950'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+              : 'bg-rose-50 border-rose-200 text-rose-950'
           }`}
         >
           {alert.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-[#F05D24] flex-shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-[#D84A15] flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
           )}
           <div className="flex-1 font-medium">{alert.message}</div>
           {alert.type === 'error' && (
             <button
               type="button"
               onClick={() => loadInventaris()}
-              className="text-xs font-bold text-[#D84A15] hover:underline flex-shrink-0 mr-2"
+              className="text-xs font-bold text-rose-700 hover:underline flex-shrink-0 mr-2"
             >
               Coba Lagi
             </button>
@@ -562,7 +562,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
       )}
 
       {/* 3. BAR PENCARIAN & FILTER */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+      <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
           {/* Input Pencarian */}
           <div className="sm:col-span-2 lg:col-span-5 relative">
@@ -578,7 +578,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 setPage(1);
               }}
               placeholder="Cari kode, nama barang, serial, PIC..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 text-xs text-gray-900 focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20 transition-all"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 text-xs text-gray-900 focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20 transition-all"
             />
           </div>
 
@@ -591,7 +591,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 setFilterKategori(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 bg-white focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20 transition-all"
+              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 bg-white focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20 transition-all"
             >
               <option value="">Semua Kategori</option>
               {KATEGORI_OPTIONS.map((cat) => (
@@ -611,7 +611,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 setFilterStatusAset(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 bg-white focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20 transition-all"
+              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 bg-white focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20 transition-all"
             >
               <option value="">Semua Status Fisik</option>
               {STATUS_ASET_OPTIONS.map((st) => (
@@ -631,7 +631,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 setFilterStatusKontrak(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 bg-white focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20 transition-all"
+              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 bg-white focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20 transition-all"
             >
               <option value="">Semua Kontrak</option>
               <option value="AKTIF">Kontrak Aktif</option>
@@ -646,13 +646,13 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
         {(search || filterKategori || filterStatusAset || filterStatusKontrak) && (
           <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-[#6B7280]">
             <div className="flex items-center space-x-1.5">
-              <Filter className="w-3.5 h-3.5 text-[#F05D24]" />
+              <Filter className="w-3.5 h-3.5 text-[#176B7A]" />
               <span>Filter aktif diterapkan</span>
             </div>
             <button
               type="button"
               onClick={handleResetFilter}
-              className="text-[#F05D24] font-semibold hover:underline"
+              className="text-[#F15A24] font-semibold hover:underline"
             >
               Reset Semua Filter
             </button>
@@ -661,41 +661,41 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
       </div>
 
       {/* 4. TABEL DAFTAR DATA INVENTARIS */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <thead className="bg-[#F8FAFC] text-[#6B7280] uppercase text-[10px] font-bold tracking-wider border-b border-gray-200">
               <tr>
-                <th className="py-3.5 px-4 font-bold">Kode</th>
-                <th className="py-3.5 px-4 font-bold">Nama Barang & Detail</th>
-                <th className="py-3.5 px-4 font-bold">Kategori & Lokasi</th>
-                <th className="py-3.5 px-4 font-bold">Status Fisik</th>
-                <th className="py-3.5 px-4 font-bold">Kepemilikan / Kontrak</th>
-                <th className="py-3.5 px-4 font-bold">Foto</th>
-                <th className="py-3.5 px-4 font-bold text-center">Aksi</th>
+                <th className="py-3.5 px-4">Kode</th>
+                <th className="py-3.5 px-4">Nama Barang & Detail</th>
+                <th className="py-3.5 px-4">Kategori & Lokasi</th>
+                <th className="py-3.5 px-4">Status Fisik</th>
+                <th className="py-3.5 px-4">Kepemilikan / Kontrak</th>
+                <th className="py-3.5 px-4">Foto</th>
+                <th className="py-3.5 px-4 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-gray-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#F05D24] mb-2" />
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#176B7A] mb-2" />
                     <p className="font-medium">Memuat data inventaris...</p>
                   </td>
                 </tr>
               ) : alert && alert.type === 'error' && inventaris.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-gray-500">
-                    <AlertCircle className="w-8 h-8 mx-auto text-[#F05D24] mb-2" />
+                    <AlertCircle className="w-8 h-8 mx-auto text-rose-500 mb-2" />
                     <p className="font-bold text-gray-800 text-sm">Gagal Memuat Data Inventaris</p>
-                    <p className="text-xs text-[#D84A15] mt-1 max-w-sm mx-auto">
+                    <p className="text-xs text-rose-600 mt-1 max-w-sm mx-auto">
                       {alert.message || 'Terjadi kesalahan saat memuat data dari server backend.'}
                     </p>
                     <button
                       type="button"
                       id="btn-retry-inventaris"
                       onClick={() => loadInventaris()}
-                      className="mt-3 inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#F05D24] hover:bg-[#D84A15] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
+                      className="mt-3 inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#176B7A] hover:bg-[#0f4e5a] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       <span>Coba Lagi</span>
@@ -722,7 +722,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                       <button
                         type="button"
                         onClick={() => handleOpenDetail(item)}
-                        className="font-mono font-bold text-[#F05D24] hover:underline text-left inline-flex items-center space-x-1"
+                        className="font-mono font-bold text-[#176B7A] hover:text-[#0f4e5a] hover:underline text-left inline-flex items-center space-x-1"
                         title="Klik untuk melihat detail lengkap"
                       >
                         <span>{item.kode_inventaris}</span>
@@ -751,10 +751,10 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           item.status_aset === 'Ada'
-                            ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : item.status_aset === 'Rusak'
-                            ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                            : 'bg-orange-200/80 text-orange-950 border border-orange-400 font-bold'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}
                       >
                         {item.status_aset}
@@ -767,15 +767,15 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                         <span
                           className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                             item.status_kepemilikan === 'SEWA' || item.status_kepemilikan === 'Sewa'
-                              ? 'bg-[#F05D24]/10 text-[#F05D24] border border-[#F05D24]/20'
-                              : 'bg-orange-50 text-[#F05D24] border border-orange-200'
+                              ? 'bg-[#176B7A]/10 text-[#176B7A] border border-[#176B7A]/20'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
                           }`}
                         >
                           {item.status_kepemilikan}
                         </span>
                       </div>
                       {item.kontrak && (
-                        <div className="text-[10px] font-mono text-[#F05D24] mt-0.5">
+                        <div className="text-[10px] font-mono text-[#176B7A] mt-0.5">
                           {item.kontrak.kode_kontrak}
                         </div>
                       )}
@@ -794,7 +794,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                             }}
                           />
                           {item.photos.length > 1 && (
-                            <span className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#F05D24] text-white text-[9px] rounded-full font-bold">
+                            <span className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#176B7A] text-white text-[9px] rounded-full font-bold">
                               +{item.photos.length - 1}
                             </span>
                           )}
@@ -811,18 +811,28 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                         <button
                           type="button"
                           onClick={() => handleOpenDetail(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F05D24] hover:bg-[#F05D24]/10 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#176B7A] hover:bg-[#176B7A]/10 transition-colors"
                           title="Lihat Detail Lengkap"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+
+                        {/* Download QR Code */}
+                        <a
+                          href={`/admin/barcode/${encodeURIComponent(item.kode_inventaris)}/download?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                          download={`QR-${item.kode_inventaris}.png`}
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#176B7A] hover:bg-[#176B7A]/10 transition-colors"
+                          title="Download QR Code (PNG)"
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
 
                         {/* Cetak QR Code */}
                         <a
                           href={`/admin/barcode/${encodeURIComponent(item.kode_inventaris)}/print?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F05D24] hover:bg-gray-100 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#176B7A] hover:bg-[#176B7A]/10 transition-colors"
                           title="Cetak Label QR Code"
                         >
                           <Printer className="w-4 h-4" />
@@ -832,7 +842,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F05D24] hover:bg-[#F05D24]/10 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F15A24] hover:bg-[#F15A24]/10 transition-colors"
                           title="Ubah Data Inventaris"
                         >
                           <Edit className="w-4 h-4" />
@@ -842,7 +852,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                         <button
                           type="button"
                           onClick={() => handleOpenDelete(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F05D24] hover:bg-orange-50 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Hapus Inventaris"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -876,7 +886,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 <span>Sebelumnya</span>
               </button>
 
-              <span className="px-3 py-1.5 font-bold text-[#F05D24] bg-[#F05D24]/10 rounded-xl">
+              <span className="px-3 py-1.5 font-bold text-[#176B7A] bg-[#176B7A]/10 rounded-xl">
                 {meta.current_page}
               </span>
 
@@ -901,23 +911,23 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-gray-200 max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header Modal */}
-            <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+            <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-[#F8FAFC]">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F05D24]/10 text-[#F05D24] flex items-center justify-center font-bold text-base flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center font-bold text-base flex-shrink-0">
                   <Boxes className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-mono font-bold text-sm text-[#F05D24] bg-white px-2 py-0.5 rounded border border-gray-200">
+                    <span className="font-mono font-bold text-sm text-[#176B7A] bg-white px-2 py-0.5 rounded border border-gray-200">
                       {detailItem.kode_inventaris}
                     </span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         detailItem.status_aset === 'Ada'
-                          ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : detailItem.status_aset === 'Rusak'
-                          ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                          : 'bg-orange-200/80 text-orange-950 border border-orange-400 font-bold'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
                       }`}
                     >
                       {detailItem.status_aset}
@@ -941,14 +951,14 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
             {/* Body Modal Detail */}
             <div className="p-6 overflow-y-auto space-y-6 text-xs">
               {loadingDetail && (
-                <div className="p-3 bg-orange-50 rounded-xl border border-orange-200 text-orange-900 text-[11px] flex items-center space-x-2">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#F05D24]" />
+                <div className="p-3 bg-[#176B7A]/5 rounded-xl border border-[#176B7A]/20 text-[#176B7A] text-[11px] flex items-center space-x-2">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#176B7A]" />
                   <span>Memperbarui detail terkini dari server...</span>
                 </div>
               )}
 
               {/* Grid Informasi Identifikasi */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200/70">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50/70 p-4 rounded-2xl border border-gray-200/70">
                 <div>
                   <span className="text-[#6B7280]">Kategori:</span>
                   <p className="font-bold text-gray-900">{detailItem.kategori || '-'}</p>
@@ -981,14 +991,14 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 </div>
                 <div>
                   <span className="text-[#6B7280]">Status Kepemilikan:</span>
-                  <p className="font-bold text-[#F05D24]">{detailItem.status_kepemilikan || '-'}</p>
+                  <p className="font-bold text-[#176B7A]">{detailItem.status_kepemilikan || '-'}</p>
                 </div>
               </div>
 
               {/* Status Kontrak Sewa (jika ada) */}
               <div className="p-4 rounded-2xl border border-gray-200 space-y-2">
                 <h4 className="font-bold text-gray-900 text-xs flex items-center space-x-1.5">
-                  <FileText className="w-4 h-4 text-[#F05D24]" />
+                  <FileText className="w-4 h-4 text-[#176B7A]" />
                   <span>Keterikatan Kontrak Sewa Beli</span>
                 </h4>
                 {detailItem.kontrak ? (
@@ -1003,7 +1013,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     </div>
                     <div>
                       <span className="text-[#6B7280]">Sisa Masa Berlaku:</span>
-                      <p className="font-bold text-[#D84A15]">
+                      <p className="font-bold text-[#F15A24]">
                         {detailItem.kontrak.sisa_kontrak || `${detailItem.kontrak.sisa_hari} hari`}
                       </p>
                     </div>
@@ -1042,10 +1052,54 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 </div>
               )}
 
+              {/* Card Label QR Code Aset */}
+              <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/70 flex flex-col sm:flex-row items-center gap-4">
+                <div className="bg-white p-2 rounded-xl border border-dashed border-gray-300 shadow-2xs flex-shrink-0">
+                  <img
+                    src={`/admin/barcode/${encodeURIComponent(detailItem.kode_inventaris)}/download?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                    alt={`QR Code ${detailItem.kode_inventaris}`}
+                    className="w-24 h-24 object-contain"
+                  />
+                </div>
+                <div className="flex-1 text-center sm:text-left space-y-1.5">
+                  <div className="flex items-center justify-center sm:justify-start space-x-2">
+                    <span className="font-mono font-bold text-xs text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">
+                      {detailItem.kode_inventaris}
+                    </span>
+                    <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                      Label QR Code (2D)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-600 leading-relaxed">
+                    Label QR Code aset resmi PT Banyan Koalindo Lestari. Unduh file gambar PNG untuk disimpan di komputer atau dicetak kembali kapan saja.
+                  </p>
+                  <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <a
+                      href={`/admin/barcode/${encodeURIComponent(detailItem.kode_inventaris)}/download?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                      download={`QR-${detailItem.kode_inventaris}.png`}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold shadow-2xs transition-colors"
+                      title={`Download QR Code ${detailItem.kode_inventaris} (PNG)`}
+                    >
+                      <Download className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Download QR Code</span>
+                    </a>
+                    <a
+                      href={`/admin/barcode/${encodeURIComponent(detailItem.kode_inventaris)}/print?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold shadow-2xs transition-colors"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Cetak Label QR Code</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
               {/* Galeri Foto Aset */}
               <div>
                 <h4 className="font-bold text-gray-900 text-xs mb-2 flex items-center space-x-1.5">
-                  <ImageIcon className="w-4 h-4 text-[#F05D24]" />
+                  <ImageIcon className="w-4 h-4 text-[#176B7A]" />
                   <span>Foto Dokumentasi Aset</span>
                 </h4>
                 {detailItem.photos && detailItem.photos.length > 0 ? (
@@ -1072,19 +1126,29 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
             </div>
 
             {/* Footer Modal Detail */}
-            <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+            <div className="p-4 border-t border-gray-200 bg-[#F8FAFC] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center flex-wrap gap-2">
                 {detailItem.barcode_url && (
                   <a
                     href={detailItem.barcode_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center space-x-1 text-xs font-semibold text-[#F05D24] hover:underline"
+                    className="inline-flex items-center space-x-1 text-xs font-semibold text-[#176B7A] hover:underline mr-1"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Buka Halaman Scan Publik</span>
                   </a>
                 )}
+                <a
+                  href={`/admin/barcode/${encodeURIComponent(detailItem.kode_inventaris)}/download?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                  download={`QR-${detailItem.kode_inventaris}.png`}
+                  id="btn-download-qr-detail"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold shadow-2xs transition-colors"
+                  title={`Download QR Code ${detailItem.kode_inventaris} (PNG)`}
+                >
+                  <Download className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Download QR Code</span>
+                </a>
                 <a
                   href={`/admin/barcode/${encodeURIComponent(detailItem.kode_inventaris)}/print?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
                   target="_blank"
@@ -1099,7 +1163,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
               <button
                 type="button"
                 onClick={() => setShowDetailModal(false)}
-                className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold text-xs transition-colors"
+                className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold text-xs transition-colors text-center"
               >
                 Tutup
               </button>
@@ -1115,9 +1179,9 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-gray-200 max-h-[92vh] flex flex-col overflow-hidden">
             {/* Header Modal Form */}
-            <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+            <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-[#F8FAFC]">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F05D24]/10 text-[#F05D24] flex items-center justify-center font-bold text-base flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center font-bold text-base flex-shrink-0">
                   {isEditMode ? <Edit className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                 </div>
                 <div>
@@ -1148,7 +1212,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 {/* Kode Inventaris */}
                 <div className="space-y-1">
                   <label className="block font-bold text-gray-700">
-                    Kode Inventaris <span className="text-[#F05D24]">*</span>
+                    Kode Inventaris <span className="text-[#F15A24]">*</span>
                   </label>
                   <input
                     type="text"
@@ -1159,19 +1223,19 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     disabled={submitting}
                     className={`w-full px-3 py-2 rounded-xl border text-xs font-mono uppercase focus:outline-none focus:ring-2 ${
                       fieldErrors.kode_inventaris
-                        ? 'border-[#F05D24] bg-orange-50/40 focus:border-[#F05D24] focus:ring-[#F05D24]/20'
-                        : 'border-gray-300 focus:border-[#F05D24] focus:ring-[#F05D24]/20'
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                     }`}
                   />
                   {fieldErrors.kode_inventaris && (
-                    <p className="text-[11px] text-[#BF3E0F] font-medium">{fieldErrors.kode_inventaris[0]}</p>
+                    <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.kode_inventaris[0]}</p>
                   )}
                 </div>
 
                 {/* Nama Barang */}
                 <div className="space-y-1">
                   <label className="block font-bold text-gray-700">
-                    Nama Barang <span className="text-[#F05D24]">*</span>
+                    Nama Barang <span className="text-[#F15A24]">*</span>
                   </label>
                   <input
                     type="text"
@@ -1182,12 +1246,12 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     disabled={submitting}
                     className={`w-full px-3 py-2 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
                       fieldErrors.nama_barang
-                        ? 'border-[#F05D24] bg-orange-50/40 focus:border-[#F05D24] focus:ring-[#F05D24]/20'
-                        : 'border-gray-300 focus:border-[#F05D24] focus:ring-[#F05D24]/20'
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                     }`}
                   />
                   {fieldErrors.nama_barang && (
-                    <p className="text-[11px] text-[#BF3E0F] font-medium">{fieldErrors.nama_barang[0]}</p>
+                    <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.nama_barang[0]}</p>
                   )}
                 </div>
 
@@ -1199,7 +1263,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     value={formData.kategori}
                     onChange={handleFormChange}
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs bg-white focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs bg-white focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   >
                     <option value="">Pilih Kategori...</option>
                     {KATEGORI_OPTIONS.map((cat) => (
@@ -1220,7 +1284,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     onChange={handleFormChange}
                     placeholder="Contoh: Dell, Komatsu, Epson"
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   />
                 </div>
 
@@ -1234,7 +1298,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     onChange={handleFormChange}
                     placeholder="Contoh: Latitude 5420, PC200-8"
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   />
                 </div>
 
@@ -1248,7 +1312,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     onChange={handleFormChange}
                     placeholder="Contoh: SN-8921-99214"
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-mono focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-mono focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   />
                 </div>
 
@@ -1262,7 +1326,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     onChange={handleFormChange}
                     placeholder="Contoh: Kantor Utama, Ruang Server, Pit Tambang"
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   />
                 </div>
 
@@ -1276,7 +1340,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     onChange={handleFormChange}
                     placeholder="Contoh: Budi Santoso"
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   />
                 </div>
 
@@ -1290,7 +1354,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     onChange={handleFormChange}
                     placeholder="Contoh: PT United Tractors Tbk"
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   />
                 </div>
 
@@ -1302,7 +1366,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     value={formData.kontrak_id}
                     onChange={handleFormChange}
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs bg-white focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs bg-white focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   >
                     <option value="">Tanpa Kontrak (Aset Milik Mandiri Perusahaan)</option>
                     {kontrakList.map((k) => (
@@ -1321,7 +1385,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     value={formData.kondisi}
                     onChange={handleFormChange}
                     disabled={submitting}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs bg-white focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs bg-white focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   >
                     {KONDISI_OPTIONS.map((kd) => (
                       <option key={kd} value={kd}>
@@ -1334,7 +1398,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 {/* Status Aset */}
                 <div className="space-y-1">
                   <label className="block font-bold text-gray-700">
-                    Status Aset <span className="text-[#F05D24]">*</span>
+                    Status Aset <span className="text-[#F15A24]">*</span>
                   </label>
                   <select
                     name="status_aset"
@@ -1343,8 +1407,8 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     disabled={submitting}
                     className={`w-full px-3 py-2 rounded-xl border text-xs bg-white focus:outline-none focus:ring-2 ${
                       fieldErrors.status_aset
-                        ? 'border-[#F05D24] bg-orange-50/40 focus:border-[#F05D24] focus:ring-[#F05D24]/20'
-                        : 'border-gray-300 focus:border-[#F05D24] focus:ring-[#F05D24]/20'
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                     }`}
                   >
                     {STATUS_ASET_OPTIONS.map((st) => (
@@ -1354,7 +1418,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                     ))}
                   </select>
                   {fieldErrors.status_aset && (
-                    <p className="text-[11px] text-[#BF3E0F] font-medium">{fieldErrors.status_aset[0]}</p>
+                    <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.status_aset[0]}</p>
                   )}
                 </div>
               </div>
@@ -1369,7 +1433,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                   onChange={handleFormChange}
                   placeholder="Contoh: RAM 16GB, SSD 512GB, Processor Intel i7-1185G7"
                   disabled={submitting}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                 />
               </div>
 
@@ -1383,7 +1447,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                   onChange={handleFormChange}
                   placeholder="Contoh: Unit beroperasi normal, pemeliharaan berkala tiap bulan"
                   disabled={submitting}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#F05D24] focus:ring-2 focus:ring-[#F05D24]/20"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                 />
               </div>
 
@@ -1411,7 +1475,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                   accept="image/jpeg,image/png,image/jpg,image/webp"
                   onChange={handleFotoChange}
                   disabled={submitting}
-                  className="text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#F05D24]/10 file:text-[#F05D24] hover:file:bg-[#F05D24]/20 cursor-pointer"
+                  className="text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#176B7A]/10 file:text-[#176B7A] hover:file:bg-[#176B7A]/20 cursor-pointer"
                 />
 
                 {isEditMode && (
@@ -1421,7 +1485,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 )}
 
                 {fieldErrors.foto && (
-                  <p className="text-[11px] text-[#BF3E0F] font-medium">{fieldErrors.foto[0]}</p>
+                  <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.foto[0]}</p>
                 )}
               </div>
 
@@ -1443,17 +1507,17 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                   accept="image/jpeg,image/png,image/jpg,image/webp"
                   onChange={handleMultiplePhotosChange}
                   disabled={submitting}
-                  className="text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#F05D24]/10 file:text-[#F05D24] hover:file:bg-[#F05D24]/20 cursor-pointer"
+                  className="text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#176B7A]/10 file:text-[#176B7A] hover:file:bg-[#176B7A]/20 cursor-pointer"
                 />
 
                 {formData.photos && formData.photos.length > 0 && (
-                  <p className="text-[11px] font-semibold text-[#D84A15]">
+                  <p className="text-[11px] font-semibold text-[#176B7A]">
                     {formData.photos.length} file foto tambahan dipilih untuk diunggah.
                   </p>
                 )}
 
                 {fieldErrors.photos && (
-                  <p className="text-[11px] text-[#BF3E0F] font-medium">{fieldErrors.photos[0]}</p>
+                  <p className="text-[11px] text-rose-600 font-medium">{fieldErrors.photos[0]}</p>
                 )}
               </div>
 
@@ -1472,7 +1536,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                   type="submit"
                   id="btn-submit-inventaris-form"
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#F05D24] to-[#D84A15] hover:from-[#D84A15] hover:to-[#BF3E0F] text-white font-bold text-xs shadow-md transition-all flex items-center space-x-2 disabled:opacity-60"
+                  className="px-5 py-2.5 rounded-xl bg-[#F15A24] hover:bg-[#d84a15] text-white font-bold text-xs shadow-xs transition-all flex items-center space-x-2 disabled:opacity-60"
                 >
                   {submitting ? (
                     <>
@@ -1495,7 +1559,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
       {showDeleteModal && deleteItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-gray-200 p-6 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-orange-100 text-[#F05D24] flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center">
               <AlertTriangle className="w-6 h-6" />
             </div>
 
@@ -1510,7 +1574,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-orange-50 border border-orange-200 text-[11px] text-orange-950">
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-950">
               Peringatan: Tindakan ini tidak dapat dibatalkan.
             </div>
 
@@ -1529,7 +1593,7 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                 id="btn-confirm-delete-inventaris"
                 onClick={handleConfirmDelete}
                 disabled={deleting}
-                className="px-4 py-2 rounded-xl bg-[#F05D24] hover:bg-[#D84A15] text-white font-bold text-xs shadow-md transition-colors flex items-center space-x-2 disabled:opacity-60"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-colors flex items-center space-x-2 disabled:opacity-60"
               >
                 {deleting ? (
                   <>

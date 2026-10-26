@@ -35,8 +35,8 @@ Route::prefix('admin/barcode')->name('barcode.')->group(function () {
     Route::match(['get', 'post'], '/print-all', [BarcodeController::class, 'printAll'])->name('print-all');
 });
 
-// Admin Legacy Routes (Terlindungi Autentikasi)
-Route::middleware('auth')->group(function () {
+// Admin Legacy Routes (Terlindungi Autentikasi dan Pembatasan Akun Resmi)
+Route::middleware(['auth', \App\Http\Middleware\EnsureOfficialAccount::class])->group(function () {
     // Dashboard Exports (Blade)
     Route::get('/dashboard/export/pdf', [DashboardController::class, 'exportPdf'])->name('dashboard.export.pdf');
     Route::get('/dashboard/export/excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export.excel');

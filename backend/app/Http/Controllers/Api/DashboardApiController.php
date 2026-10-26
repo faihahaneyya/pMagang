@@ -25,20 +25,34 @@ class DashboardApiController extends Controller
         $asetRusak = $allInventaris->where('status_aset', 'Rusak')->count();
         $asetTidakDitemukan = $allInventaris->where('status_aset', 'Tidak Ditemukan')->count();
 
-        $kontrakSedangBerjalan = $allInventaris->filter(function ($inv) {
+        // Statistik dokumen kontrak dihitung secara dinamis dari tabel kontrak di MySQL
+        $allKontrak = Kontrak::all();
+        $totalDokumen = $allKontrak->count();
+        $kontrakAktif = $allKontrak->filter(function ($k) {
+            return in_array($k->status_kontrak, ['AKTIF', 'Sedang Berjalan']);
+        })->count();
+        $kontrakAkanBerakhir = $allKontrak->filter(function ($k) {
+            return in_array($k->status_kontrak, ['AKAN BERAKHIR', 'Akan Berakhir']);
+        })->count();
+        $kontrakBerakhir = $allKontrak->filter(function ($k) {
+            return in_array($k->status_kontrak, ['BERAKHIR', 'Habis']);
+        })->count();
+        $akumulasiKomitmen = (float) $allKontrak->sum(function ($k) {
+            return (float) $k->total_biaya;
+        });
+
+        // Hitung juga statistik unit inventaris berdasarkan status kontraknya
+        $unitSewaAktif = $allInventaris->filter(function ($inv) {
             return in_array($inv->status_kontrak, ['AKTIF', 'Sedang Berjalan']);
         })->count();
 
-        $kontrakAkanBerakhir = $allInventaris->filter(function ($inv) {
+        $unitAkanBerakhir = $allInventaris->filter(function ($inv) {
             return in_array($inv->status_kontrak, ['AKAN BERAKHIR', 'Akan Berakhir']);
         })->count();
 
-        $kontrakHabis = $allInventaris->filter(function ($inv) {
+        $unitSewaBerakhir = $allInventaris->filter(function ($inv) {
             return in_array($inv->status_kontrak, ['BERAKHIR', 'Habis']);
         })->count();
-
-        $totalKontrak = Kontrak::count();
-        $totalBiayaSewa = (float) Kontrak::sum('biaya_sewa');
 
         // Filter list items untuk preview ringkasan
         $filter = $request->get('filter', 'terbaru');
@@ -92,14 +106,23 @@ class DashboardApiController extends Controller
                 'aset_hilang' => $asetHilang,
                 'aset_rusak' => $asetRusak,
                 'aset_tidak_ditemukan' => $asetTidakDitemukan,
-                'sewa_aktif' => $kontrakSedangBerjalan,
-                'akan_berakhir' => $kontrakAkanBerakhir,
-                'sewa_berakhir' => $kontrakHabis,
-                'kontrak_sedang_berjalan' => $kontrakSedangBerjalan,
+                // Statistik Dokumen Kontrak Dinamis MySQL
+                'total_dokumen' => $totalDokumen,
+                'kontrak_aktif' => $kontrakAktif,
                 'kontrak_akan_berakhir' => $kontrakAkanBerakhir,
-                'kontrak_habis' => $kontrakHabis,
-                'total_kontrak' => $totalKontrak,
-                'total_biaya_sewa' => $totalBiayaSewa,
+                'kontrak_berakhir' => $kontrakBerakhir,
+                'akumulasi_komitmen' => $akumulasiKomitmen,
+                // Kunci Kompatibilitas Eksisting
+                'total_kontrak' => $totalDokumen,
+                'total_biaya_sewa' => $akumulasiKomitmen,
+                'kontrak_sedang_berjalan' => $kontrakAktif,
+                'kontrak_habis' => $kontrakBerakhir,
+                'sewa_aktif' => $unitSewaAktif,
+                'akan_berakhir' => $unitAkanBerakhir,
+                'sewa_berakhir' => $unitSewaBerakhir,
+                'unit_sewa_aktif' => $unitSewaAktif,
+                'unit_akan_berakhir' => $unitAkanBerakhir,
+                'unit_sewa_berakhir' => $unitSewaBerakhir,
                 'list_title' => $listTitle,
                 'filter' => $filter,
                 'recent_items' => $items,

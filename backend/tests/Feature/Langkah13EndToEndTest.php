@@ -15,14 +15,15 @@ class Langkah13EndToEndTest extends TestCase
     {
         parent::setUp();
 
-        // Gunakan akun administrator yang ada di database atau buat fallback
-        $existingAdmin = User::where('email', 'bklho@gmail.com')->first();
+        // Gunakan akun administrator resmi IT yang ada di database atau buat fallback
+        $existingAdmin = User::whereIn('email', ['it@banyankoalindo.co.id', 'bklho@gmail.com'])->first();
         if ($existingAdmin) {
             $this->user = $existingAdmin;
         } else {
             $this->user = User::factory()->create([
-                'name' => 'Banyan Koalindo Lestari',
-                'email' => 'bklho@gmail.com',
+                'name' => 'IT Administrator',
+                'email' => 'it@banyankoalindo.co.id',
+                'role' => 'IT',
             ]);
         }
     }
@@ -156,7 +157,7 @@ class Langkah13EndToEndTest extends TestCase
         Kontrak::where('kode_kontrak', $testCode)->delete();
 
         $initialCount = Kontrak::count();
-        $this->assertEquals(5, $initialCount, "Sebelum pengujian harus ada 5 kontrak asli");
+        $this->assertEquals(6, $initialCount, "Sebelum pengujian harus ada 6 kontrak asli");
 
         // 1. CREATE
         $createRes = $this->actingAs($this->user)->postJson('/api/kontrak', [
@@ -226,9 +227,9 @@ class Langkah13EndToEndTest extends TestCase
         $dbContractDeleted = Kontrak::where('kode_kontrak', $testCode)->first();
         $this->assertNull($dbContractDeleted, "Kontrak uji harus terhapus dari database setelah pengujian");
 
-        // Verifikasi 5 kontrak asli tidak tersentuh
+        // Verifikasi seluruh kontrak asli tidak tersentuh
         $finalCount = Kontrak::count();
-        $this->assertEquals(5, $finalCount, "Setelah penghapusan, tepat 5 kontrak asli harus tetap ada di database");
+        $this->assertEquals($initialCount, $finalCount, "Setelah penghapusan, seluruh kontrak asli harus tetap ada di database");
     }
 
     /**
@@ -286,7 +287,7 @@ class Langkah13EndToEndTest extends TestCase
      */
     public function test_7_data_integrity_check(): void
     {
-        $this->assertEquals(5, Kontrak::count(), "Database harus memiliki tepat 5 kontrak");
+        $this->assertEquals(6, Kontrak::count(), "Database harus memiliki tepat 6 kontrak");
         $this->assertEquals(15, Inventaris::count(), "Database harus memiliki tepat 15 inventaris");
 
         // Pastikan relasi inventaris memiliki kontrak yang valid

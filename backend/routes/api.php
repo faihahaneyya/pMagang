@@ -36,8 +36,8 @@ Route::middleware('web')->group(function () {
     // Login Admin (Publik tetapi Terlindungi CSRF & Memulai Sesi)
     Route::post('/login', [\App\Http\Controllers\Api\AuthApiController::class, 'login'])->name('api.login');
 
-    // Endpoint Internal Admin (Wajib Memiliki Sesi Aktif 'auth')
-    Route::middleware('auth')->group(function () {
+    // Endpoint Internal Admin (Wajib Memiliki Sesi Aktif 'auth' dan Akun Resmi 'IT' / 'Finance')
+    Route::middleware(['auth', \App\Http\Middleware\EnsureOfficialAccount::class])->group(function () {
         // Pemeriksaan Pengguna Aktif & Logout
         Route::get('/me', [\App\Http\Controllers\Api\AuthApiController::class, 'me'])->name('api.me');
         Route::post('/logout', [\App\Http\Controllers\Api\AuthApiController::class, 'logout'])->name('api.logout');

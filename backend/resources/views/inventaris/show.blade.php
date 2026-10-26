@@ -293,7 +293,7 @@
                 </p>
                 <div style="display: flex; gap: 10px; width: 100%;">
                     <a href="{{ route('barcode.download', $inventaris->kode_inventaris) }}" class="btn btn-secondary" style="flex: 1; justify-content: center;">
-                        <i class="fas fa-download"></i> Unduh PNG
+                        <i class="fas fa-download"></i> Download QR Code
                     </a>
                     <a href="{{ route('barcode.print', $inventaris->kode_inventaris) }}" target="_blank" class="btn btn-primary" style="flex: 1; justify-content: center;">
                         <i class="fas fa-print"></i> Cetak QR Code

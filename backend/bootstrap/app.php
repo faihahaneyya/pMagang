@@ -26,4 +26,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request, \Throwable $e) {
             return $request->is('api/*') || $request->expectsJson();
         });
+
+        // Cegah kebocoran SQLSTATE, struktur query SQL, dan detail database internal ke response pengguna
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                \Illuminate\Support\Facades\Log::error('Database Query Exception: ' . $e->getMessage(), [
+                    'sql' => $e->getSql(),
+                    'bindings' => $e->getBindings(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data inventaris belum dapat dimuat. Silakan coba kembali atau hubungi administrator.',
+                ], 500);
+            }
+        });
     })->create();

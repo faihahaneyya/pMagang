@@ -21,6 +21,7 @@ function getInitialMenu() {
   const pathname = window.location.pathname.toLowerCase();
   if (pathname.startsWith('/inventaris')) return 'inventaris';
   if (pathname.startsWith('/kontrak')) return 'kontrak';
+  if (pathname.startsWith('/laporan')) return 'laporan';
   return 'dashboard';
 }
 

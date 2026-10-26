@@ -213,6 +213,9 @@
             <button class="btn-print" onclick="window.print()">
                 🖨️ Cetak Label QR Code
             </button>
+            <a href="{{ route('barcode.download', $inventaris->kode_inventaris) }}" class="btn-print" style="text-decoration: none; background: #334155; display: inline-flex; align-items: center; gap: 6px;" title="Unduh gambar QR Code (PNG)">
+                ⬇️ Download QR Code
+            </a>
             <button class="btn-close" onclick="window.close()">
                 Tutup
             </button>

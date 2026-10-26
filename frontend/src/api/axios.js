@@ -23,7 +23,24 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response ? error.response.status : 0;
     const data = error.response?.data;
-    const message = data?.message || (status === 0 ? 'Tidak dapat terhubung ke server backend (Network Error / Offline).' : 'Terjadi kesalahan pada permintaan.');
+    let message = data?.message;
+
+    // Cegah tampilan raw SQLSTATE, nama tabel internal, atau query SQL ke antarmuka pengguna
+    if (message && typeof message === 'string' && (
+      message.includes('SQLSTATE') ||
+      message.includes('inventory_photos') ||
+      message.includes('QueryException') ||
+      message.includes("doesn't exist") ||
+      /select\s+.*\s+from/i.test(message)
+    )) {
+      message = 'Data inventaris belum dapat dimuat. Silakan coba kembali atau hubungi administrator.';
+    }
+
+    if (!message) {
+      message = status === 0
+        ? 'Tidak dapat terhubung ke server backend (Network Error / Offline).'
+        : 'Terjadi kesalahan pada permintaan.';
+    }
 
     return Promise.reject({
       status,

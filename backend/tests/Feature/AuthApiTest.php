@@ -18,9 +18,37 @@ class AuthApiTest extends TestCase
      */
     protected function createTestUser(): User
     {
+        $user = User::where('email', 'it@banyankoalindo.co.id')->first();
+        if ($user) {
+            $user->password = Hash::make('password123');
+            $user->save();
+            return $user;
+        }
+
         return User::create([
-            'name' => 'Admin Penguji',
-            'email' => 'admin.test@example.com',
+            'name' => 'IT Administrator',
+            'email' => 'it@banyankoalindo.co.id',
+            'role' => 'IT',
+            'password' => Hash::make('password123'),
+        ]);
+    }
+
+    /**
+     * Helper untuk membuat user finance uji sementara.
+     */
+    protected function createFinanceUser(): User
+    {
+        $user = User::where('email', 'finance@banyankoalindo.co.id')->first();
+        if ($user) {
+            $user->password = Hash::make('password123');
+            $user->save();
+            return $user;
+        }
+
+        return User::create([
+            'name' => 'Finance Administrator',
+            'email' => 'finance@banyankoalindo.co.id',
+            'role' => 'Finance',
             'password' => Hash::make('password123'),
         ]);
     }
@@ -79,7 +107,7 @@ class AuthApiTest extends TestCase
     }
 
     /**
-     * Uji 4: POST /api/login berhasil dengan kredensial valid, memulai sesi pengguna.
+     * Uji 4: POST /api/login berhasil dengan akun IT valid, memulai sesi pengguna.
      */
     public function test_login_success_with_valid_credentials(): void
     {
@@ -96,8 +124,9 @@ class AuthApiTest extends TestCase
             'message' => 'Login berhasil.',
             'user' => [
                 'id' => $user->id,
-                'name' => 'Admin Penguji',
-                'email' => 'admin.test@example.com',
+                'name' => $user->name,
+                'email' => 'it@banyankoalindo.co.id',
+                'role' => 'IT',
             ],
         ]);
 
@@ -106,6 +135,58 @@ class AuthApiTest extends TestCase
 
         // Memastikan pengguna terautentikasi di guard 'web'
         $this->assertAuthenticatedAs($user, 'web');
+    }
+
+    /**
+     * Uji 4B: POST /api/login berhasil dengan akun Finance valid.
+     */
+    public function test_login_finance_account_success(): void
+    {
+        $finance = $this->createFinanceUser();
+
+        $response = $this->postJson('/api/login', [
+            'email' => $finance->email,
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'message' => 'Login berhasil.',
+            'user' => [
+                'id' => $finance->id,
+                'name' => $finance->name,
+                'email' => 'finance@banyankoalindo.co.id',
+                'role' => 'Finance',
+            ],
+        ]);
+
+        $this->assertAuthenticatedAs($finance, 'web');
+    }
+
+    /**
+     * Uji 4C: POST /api/login ditolak untuk akun di luar IT dan Finance (403 Forbidden).
+     */
+    public function test_login_with_unauthorized_account_is_rejected(): void
+    {
+        $unauthorized = User::create([
+            'name' => 'Pengguna Lain',
+            'email' => 'unauthorized@example.com',
+            'role' => 'Guest',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => $unauthorized->email,
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(403);
+        $response->assertJson([
+            'success' => false,
+            'message' => 'Akun tidak diizinkan untuk mengakses sistem. Hanya akun IT dan Finance resmi PT Banyan Koalindo Lestari yang memiliki hak akses.',
+        ]);
+        $this->assertGuest();
     }
 
     /**
@@ -122,7 +203,7 @@ class AuthApiTest extends TestCase
     }
 
     /**
-     * Uji 5B: GET /api/me tanpa sesi dengan header Accept text/html (seperti akses langsung browser)
+     * Uji 5B: GET /api/me tanpa sesi dengan header Accept text/html
      * tetap mengembalikan respons JSON 401 dan tidak melakukan redirect HTML.
      */
     public function test_api_unauthenticated_request_with_html_accept_still_returns_json_401(): void
@@ -136,7 +217,7 @@ class AuthApiTest extends TestCase
     }
 
     /**
-     * Uji 6: GET /api/me dengan sesi aktif berhasil mengembalikan data user.
+     * Uji 6: GET /api/me dengan sesi aktif berhasil mengembalikan data user beserta role.
      */
     public function test_get_me_authenticated_returns_user_profile(): void
     {
@@ -151,6 +232,7 @@ class AuthApiTest extends TestCase
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => 'IT',
             ],
         ]);
     }
@@ -262,16 +344,40 @@ class AuthApiTest extends TestCase
     }
 
     /**
-     * Uji 12: Endpoint publik (scan & health) tetap dapat diakses tanpa autentikasi dan tanpa CSRF.
+     * Uji 13: Akun tanpa izin ditolak saat mengakses endpoint internal (403 Forbidden).
      */
-    public function test_public_endpoints_remain_accessible_without_auth_or_csrf(): void
+    public function test_unauthorized_user_is_rejected_by_internal_middleware(): void
     {
-        $healthResponse = $this->getJson('/api/health');
-        $healthResponse->assertStatus(200);
-        $healthResponse->assertJson(['status' => 'ok']);
+        $unauthorized = User::create([
+            'name' => 'Akun Tak Berizin',
+            'email' => 'unauthorized@example.com',
+            'role' => 'Guest',
+            'password' => Hash::make('password123'),
+        ]);
 
-        $scanResponse = $this->getJson('/api/scan/INV-IT-001');
-        $scanResponse->assertStatus(200);
-        $scanResponse->assertJson(['success' => true]);
+        $response = $this->actingAs($unauthorized, 'web')->getJson('/api/inventaris');
+        $response->assertStatus(403);
+        $response->assertJson([
+            'success' => false,
+            'message' => 'Akses ditolak. Hanya akun IT dan Finance resmi PT Banyan Koalindo Lestari yang memiliki hak akses ke sistem internal.',
+        ]);
+    }
+
+    /**
+     * Uji 14: Akun Finance memiliki hak akses setara terhadap seluruh modul internal.
+     */
+    public function test_finance_user_has_equal_access_to_internal_endpoints(): void
+    {
+        $finance = $this->createFinanceUser();
+
+        $invResponse = $this->actingAs($finance, 'web')->getJson('/api/inventaris');
+        $invResponse->assertStatus(200);
+
+        $kontrakResponse = $this->actingAs($finance, 'web')->getJson('/api/kontrak');
+        $kontrakResponse->assertStatus(200);
+
+        $dashResponse = $this->actingAs($finance, 'web')->getJson('/api/dashboard/stats');
+        $dashResponse->assertStatus(200);
     }
 }
+

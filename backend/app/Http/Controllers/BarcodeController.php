@@ -38,7 +38,7 @@ class BarcodeController extends Controller
 
         return response($imageData, 200, [
             'Content-Type' => 'image/png',
-            'Content-Disposition' => 'attachment; filename="qr-' . $kode . '.png"',
+            'Content-Disposition' => 'attachment; filename="QR-' . $kode . '.png"',
         ]);
     }
 

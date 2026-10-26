@@ -141,7 +141,8 @@ class Inventaris extends Model
         $matrix = $qr->getMatrix();
         $matrixWidth = $matrix->getWidth();
         $matrixHeight = $matrix->getHeight();
-        $margin = 2;
+        // Standar ISO/IEC 18004 quiet zone (margin) adalah 4 modul agar mudah dipindai kamera HP
+        $margin = 4;
         $moduleSize = (int) max(1, floor($targetSize / ($matrixWidth + ($margin * 2))));
         $totalWidth = ($matrixWidth + ($margin * 2)) * $moduleSize;
         $totalHeight = ($matrixHeight + ($margin * 2)) * $moduleSize;

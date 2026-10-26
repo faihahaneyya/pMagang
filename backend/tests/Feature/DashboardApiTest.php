@@ -18,9 +18,12 @@ class DashboardApiTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create([
-            'email' => 'admin.test@bkl.com',
-        ]);
+        $this->user = User::where('email', 'it@banyankoalindo.co.id')->first()
+            ?: User::factory()->create([
+                'name' => 'IT Administrator',
+                'email' => 'it@banyankoalindo.co.id',
+                'role' => 'IT',
+            ]);
     }
 
     public function test_dashboard_stats_unauthenticated_is_rejected(): void

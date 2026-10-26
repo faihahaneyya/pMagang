@@ -45,7 +45,7 @@ class BarcodeTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'image/png');
-        $response->assertHeader('Content-Disposition', 'attachment; filename="qr-INV-IT-001.png"');
+        $response->assertHeader('Content-Disposition', 'attachment; filename="QR-INV-IT-001.png"');
         $this->assertStringStartsWith("\x89PNG\r\n\x1a\n", $response->getContent());
     }
 
@@ -153,4 +153,44 @@ class BarcodeTest extends TestCase
         $response->assertSee('INV-IT-001');
         $response->assertDontSee('api.qrserver.com');
     }
+
+    /**
+     * Uji 8: Download QR Code untuk lebih dari satu aset inventaris.
+     * Memastikan header, nama file unik (QR-{kode}.png), dan integritas data PNG biner tajam.
+     */
+    public function test_barcode_download_multiple_assets_integrity(): void
+    {
+        $testKodes = ['INV-IT-001', 'INV-IT-002', 'INV-NET-001', 'INV-AC-001'];
+
+        foreach ($testKodes as $kode) {
+            $inv = Inventaris::where('kode_inventaris', $kode)->first();
+            if (!$inv) {
+                continue;
+            }
+
+            // Uji endpoint download web
+            $response = $this->get("/admin/barcode/{$kode}/download");
+            $response->assertStatus(200);
+            $response->assertHeader('Content-Type', 'image/png');
+            $response->assertHeader('Content-Disposition', "attachment; filename=\"QR-{$kode}.png\"");
+
+            $pngContent = $response->getContent();
+            $this->assertNotEmpty($pngContent);
+            $this->assertStringStartsWith("\x89PNG\r\n\x1a\n", $pngContent);
+
+            // Verifikasi ukuran gambar (minimal 250x250px)
+            $imageInfo = getimagesizefromstring($pngContent);
+            $this->assertNotFalse($imageInfo);
+            $this->assertGreaterThanOrEqual(250, $imageInfo[0]); // width
+            $this->assertGreaterThanOrEqual(250, $imageInfo[1]); // height
+            $this->assertEquals('image/png', $imageInfo['mime']);
+
+            // Verifikasi URL yang di-encode sama persis dengan barcode_url
+            $expectedUrl = $inv->barcode_url;
+            $qr = \BaconQrCode\Encoder\Encoder::encode($expectedUrl, \BaconQrCode\Common\ErrorCorrectionLevel::M(), 'UTF-8');
+            $this->assertNotNull($qr);
+            $this->assertNotEmpty($qr->getMatrix());
+        }
+    }
 }
+

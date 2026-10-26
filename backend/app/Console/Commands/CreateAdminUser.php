@@ -99,6 +99,7 @@ class CreateAdminUser extends Command
             User::create([
                 'name' => $name,
                 'email' => $email,
+                'role' => str_contains($email, 'finance') ? 'Finance' : 'IT',
                 'password' => $password,
             ]);
 

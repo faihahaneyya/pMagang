@@ -401,19 +401,19 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
       {/* Modal Container */}
       <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="px-5 py-4 bg-gradient-to-r from-[#F05D24] to-[#D84A15] text-white flex items-center justify-between border-b-2 border-[#BF3E0F]">
+        <div className="px-5 py-4 bg-gradient-to-r from-[#176B7A] to-[#0f4e5a] text-white flex items-center justify-between border-b border-[#0f4e5a]">
           <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white">
+            <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-2xs">
               <Camera className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center space-x-2">
                 <span>Pindai QR Code</span>
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white text-[#F05D24] tracking-wider">
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/20 text-white tracking-wider">
                   QR Code (2D)
                 </span>
               </h3>
-              <p className="text-[11px] text-orange-100">
+              <p className="text-[11px] text-teal-100">
                 Arahkan kamera ke label QR Code aset inventaris
               </p>
             </div>
@@ -443,15 +443,15 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
             {scannerState === 'SCANNING' && (
               <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
                 {/* Square Guide Reticle */}
-                <div className="relative w-[210px] h-[210px] sm:w-[230px] sm:h-[230px] rounded-2xl border-2 border-dashed border-[#F05D24] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.55)] flex items-center justify-center">
+                <div className="relative w-[210px] h-[210px] sm:w-[230px] sm:h-[230px] rounded-2xl border-2 border-dashed border-[#176B7A] bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.55)] flex items-center justify-center">
                   {/* Corner accents */}
-                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-[#F05D24] rounded-tl-md" />
-                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-[#F05D24] rounded-tr-md" />
-                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-[#F05D24] rounded-bl-md" />
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-[#F05D24] rounded-br-md" />
+                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-[#F15A24] rounded-tl-md" />
+                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-[#F15A24] rounded-tr-md" />
+                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-[#F15A24] rounded-bl-md" />
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-[#F15A24] rounded-br-md" />
 
                   {/* Animated Laser Scanning Line */}
-                  <div className="absolute left-0 right-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#F05D24] to-transparent shadow-[0_0_10px_#F05D24] animate-laserScan" />
+                  <div className="absolute left-0 right-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#F15A24] to-transparent shadow-[0_0_10px_#F15A24] animate-laserScan" />
                 </div>
 
                 <div className="absolute bottom-3 text-center px-4">
@@ -465,7 +465,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
             {/* OVERLAY: Starting / Loading State */}
             {scannerState === 'STARTING' && (
               <div className="absolute inset-0 bg-gray-900/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center space-y-3 z-10">
-                <RefreshCw className="w-8 h-8 text-[#F05D24] animate-spin" />
+                <RefreshCw className="w-8 h-8 text-[#176B7A] animate-spin" />
                 <p className="text-xs font-semibold text-white">
                   Menyiapkan kamera untuk pemindaian QR Code...
                 </p>
@@ -478,9 +478,9 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
             {/* OVERLAY: Verifying Decoded Barcode */}
             {scannerState === 'VERIFYING' && (
               <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-10 animate-fadeIn">
-                <RefreshCw className="w-9 h-9 text-[#F05D24] animate-spin" />
+                <RefreshCw className="w-9 h-9 text-[#176B7A] animate-spin" />
                 <div className="space-y-1">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F05D24] text-white">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#176B7A] text-white">
                     {scannedCode}
                   </span>
                   <h4 className="text-sm font-bold text-white">Memverifikasi Data Aset...</h4>
@@ -493,12 +493,12 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
 
             {/* OVERLAY: Success State */}
             {scannerState === 'SUCCESS' && (
-              <div className="absolute inset-0 bg-orange-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-10 animate-fadeIn">
-                <CheckCircle2 className="w-12 h-12 text-orange-400" />
+              <div className="absolute inset-0 bg-emerald-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-10 animate-fadeIn">
+                <CheckCircle2 className="w-12 h-12 text-emerald-400" />
                 <div className="space-y-1">
                   <h4 className="text-sm font-extrabold text-white">QR Code Terverifikasi!</h4>
-                  <p className="text-xs text-orange-200 font-mono">{scannedCode}</p>
-                  <p className="text-[11px] text-orange-300">Membuka halaman detail aset...</p>
+                  <p className="text-xs text-emerald-200 font-mono">{scannedCode}</p>
+                  <p className="text-[11px] text-emerald-300">Membuka halaman detail aset...</p>
                 </div>
               </div>
             )}
@@ -519,7 +519,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                   type="button"
                   id="btn-restart-from-overlay"
                   onClick={handleRetryScan}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#F05D24] hover:bg-[#d84a15] text-white font-bold text-xs shadow-md transition-all"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#176B7A] hover:bg-[#0f4e5a] text-white font-bold text-xs shadow-md transition-all"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>Mulai Kamera Kembali</span>
@@ -530,11 +530,11 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
             {/* OVERLAY: Not Found State */}
             {scannerState === 'NOT_FOUND' && (
               <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-5 text-center space-y-3 z-10 animate-fadeIn">
-                <div className="w-12 h-12 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <div className="space-y-1.5 max-w-xs">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-950 text-orange-300 border border-orange-800">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-800">
                     {scannedCode}
                   </span>
                   <h4 className="text-sm font-bold text-white">
@@ -549,7 +549,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                     type="button"
                     id="btn-retry-scan"
                     onClick={handleRetryScan}
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#F05D24] hover:bg-[#D84A15] text-white font-semibold text-xs shadow-md transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#176B7A] hover:bg-[#0f4e5a] text-white font-semibold text-xs shadow-md transition-colors"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Coba Scan Kembali</span>
@@ -560,19 +560,19 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
 
             {/* OVERLAY: Permission Denied */}
             {scannerState === 'PERMISSION_DENIED' && (
-              <div className="absolute inset-0 bg-orange-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-5 text-center space-y-3 z-10 animate-fadeIn">
-                <div className="w-12 h-12 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
+              <div className="absolute inset-0 bg-rose-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-5 text-center space-y-3 z-10 animate-fadeIn">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
                   <CameraOff className="w-6 h-6" />
                 </div>
                 <div className="space-y-1 max-w-xs">
                   <h4 className="text-sm font-extrabold text-white">Izin Kamera Ditolak</h4>
-                  <p className="text-xs text-orange-200 leading-relaxed">{errorMessage}</p>
+                  <p className="text-xs text-rose-200 leading-relaxed">{errorMessage}</p>
                 </div>
                 <button
                   type="button"
                   id="btn-retry-permission"
                   onClick={handleRetryScan}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white text-orange-950 hover:bg-orange-50 font-bold text-xs shadow-md transition-colors"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white text-rose-950 hover:bg-rose-50 font-bold text-xs shadow-md transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Coba Lagi</span>
@@ -584,7 +584,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
             {(scannerState === 'NO_CAMERA' || scannerState === 'ERROR') && (
               <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-5 text-center space-y-3 z-10 animate-fadeIn">
                 <div className="w-12 h-12 rounded-2xl bg-gray-800 text-gray-300 flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-orange-400" />
+                  <AlertTriangle className="w-6 h-6 text-amber-400" />
                 </div>
                 <div className="space-y-1 max-w-xs">
                   <h4 className="text-sm font-bold text-white">
@@ -596,7 +596,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                   type="button"
                   id="btn-retry-error"
                   onClick={handleRetryScan}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#F05D24] hover:bg-[#D84A15] text-white font-semibold text-xs shadow-md transition-colors"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#176B7A] hover:bg-[#0f4e5a] text-white font-semibold text-xs shadow-md transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Coba Lagi</span>
@@ -611,9 +611,9 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
               <span
                 className={`w-2 h-2 rounded-full ${
                   scannerState === 'SCANNING'
-                    ? 'bg-[#F05D24] animate-pulse'
+                    ? 'bg-emerald-500 animate-pulse'
                     : scannerState === 'VERIFYING'
-                    ? 'bg-[#F05D24] animate-spin'
+                    ? 'bg-[#176B7A] animate-spin'
                     : 'bg-gray-400'
                 }`}
               />
@@ -636,7 +636,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                   onClick={toggleTorch}
                   className={`p-1.5 rounded-lg border font-semibold text-xs transition-colors flex items-center space-x-1 ${
                     torchOn
-                      ? 'bg-orange-100 text-orange-950 border-orange-300'
+                      ? 'bg-amber-100 text-amber-950 border-amber-300'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                   }`}
                   title="Nyalakan / Matikan Lampu Senter"
@@ -670,7 +670,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                   className="px-2.5 py-1.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold text-[11px] flex items-center space-x-1 transition-colors"
                   title="Hentikan sementara streaming kamera"
                 >
-                  <Square className="w-3 h-3 text-[#F05D24] fill-[#F05D24]" />
+                  <Square className="w-3 h-3 text-gray-600 fill-gray-600" />
                   <span>Hentikan Kamera</span>
                 </button>
               ) : (
@@ -678,7 +678,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                   type="button"
                   id="btn-restart-camera"
                   onClick={handleRetryScan}
-                  className="px-2.5 py-1.5 rounded-lg bg-[#F05D24] hover:bg-[#D84A15] text-white font-semibold text-[11px] flex items-center space-x-1 transition-colors"
+                  className="px-2.5 py-1.5 rounded-lg bg-[#176B7A] hover:bg-[#0f4e5a] text-white font-semibold text-[11px] flex items-center space-x-1 transition-colors"
                 >
                   <Play className="w-3 h-3 fill-current" />
                   <span>Mulai Kamera</span>
@@ -700,13 +700,13 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                   placeholder="Contoh: INV-IT-001 atau tempel link aset"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                  className="flex-1 px-3 py-2 text-xs font-mono rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F05D24] focus:border-[#F05D24]"
+                  className="flex-1 px-3 py-2 text-xs font-mono rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#176B7A]/20 focus:border-[#176B7A]"
                 />
                 <button
                   type="submit"
                   id="btn-submit-manual-barcode"
                   disabled={manualLoading}
-                  className="px-4 py-2 rounded-xl bg-[#F05D24] hover:bg-[#D84A15] disabled:opacity-50 text-white font-semibold text-xs transition-colors flex items-center space-x-1"
+                  className="px-4 py-2 rounded-xl bg-[#176B7A] hover:bg-[#0f4e5a] disabled:opacity-50 text-white font-semibold text-xs transition-colors flex items-center space-x-1"
                 >
                   {manualLoading ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -717,7 +717,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
                 </button>
               </div>
               {manualError && (
-                <p id="manual-error-message" className="text-[11px] font-semibold text-[#BF3E0F] flex items-center space-x-1 pt-0.5">
+                <p id="manual-error-message" className="text-[11px] font-semibold text-rose-600 flex items-center space-x-1 pt-0.5">
                   <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                   <span>{manualError}</span>
                 </p>
@@ -726,8 +726,8 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
           </div>
 
           {/* Informasi Panduan Scan */}
-          <div className="p-3 rounded-xl bg-orange-50/60 border border-orange-200/60 text-[11px] text-orange-950 space-y-1">
-            <div className="font-bold flex items-center space-x-1.5 text-[#F05D24]">
+          <div className="p-3 rounded-xl bg-[#F8FAFC] border border-gray-200 text-[11px] text-[#6B7280] space-y-1">
+            <div className="font-bold flex items-center space-x-1.5 text-[#176B7A]">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Petunjuk Pemindaian QR Code:</span>
             </div>
@@ -760,3 +760,4 @@ export default function BarcodeScannerModal({ isOpen, onClose, onSelectAset }) {
     </div>
   );
 }
+

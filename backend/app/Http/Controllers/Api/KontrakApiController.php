@@ -54,6 +54,14 @@ class KontrakApiController extends Controller
 
         $items = collect($paginator->items())->map(fn($k) => $this->formatKontrak($k));
 
+        // Agregasi statistik KPI global dari seluruh data kontrak di database MySQL
+        $allKontrak = Kontrak::all();
+        $totalDokumen = $allKontrak->count();
+        $kontrakAktif = $allKontrak->filter(fn($k) => in_array($k->status_kontrak, ['AKTIF', 'Sedang Berjalan']))->count();
+        $kontrakAkanBerakhir = $allKontrak->filter(fn($k) => in_array($k->status_kontrak, ['AKAN BERAKHIR', 'Akan Berakhir']))->count();
+        $kontrakBerakhir = $allKontrak->filter(fn($k) => in_array($k->status_kontrak, ['BERAKHIR', 'Habis']))->count();
+        $akumulasiKomitmen = (float) $allKontrak->sum(fn($k) => (float) $k->total_biaya);
+
         return response()->json([
             'success' => true,
             'data' => $items,
@@ -62,6 +70,13 @@ class KontrakApiController extends Controller
                 'last_page' => $paginator->lastPage(),
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
+            ],
+            'kpi' => [
+                'total' => $totalDokumen,
+                'aktif' => $kontrakAktif,
+                'akan_berakhir' => $kontrakAkanBerakhir,
+                'berakhir' => $kontrakBerakhir,
+                'total_komitmen' => $akumulasiKomitmen,
             ],
         ]);
     }

@@ -13,7 +13,7 @@ class InventarisApiTest extends TestCase
 
     protected function getTestUser(): User
     {
-        return new User(['id' => 1, 'name' => 'Tester', 'email' => 'tester@example.com']);
+        return new User(['id' => 1, 'name' => 'IT Administrator', 'email' => 'it@banyankoalindo.co.id', 'role' => 'IT']);
     }
 
     /**

@@ -50,3 +50,14 @@ export const deleteKontrak = async (id) => {
   const response = await api.delete(`/kontrak/${id}`);
   return response.data;
 };
+
+/**
+ * Mengambil ringkasan statistik Dashboard dari backend.
+ * Endpoint terlindungi: GET /api/dashboard/stats
+ * @param {Object} params - { filter }
+ */
+export const getDashboardStats = async (params = {}) => {
+  const response = await api.get('/dashboard/stats', { params });
+  return response.data;
+};
+

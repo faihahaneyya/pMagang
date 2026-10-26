@@ -17,11 +17,14 @@ import {
   ArrowRight,
   Download,
   Clock,
-  Camera
+  Camera,
+  DollarSign,
+  FileSpreadsheet
 } from 'lucide-react';
-import { getInventarisList, getKontrakList, checkHealth } from '../api';
+import { getInventarisList, getKontrakList, getDashboardStats, checkHealth } from '../api';
 import InventarisPage from './InventarisPage';
 import KontrakPage from './KontrakPage';
+import LaporanPage from './LaporanPage';
 import ErrorBoundary from './ErrorBoundary';
 
 export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu: propActiveMenu, onMenuChange, onOpenScanner }) {
@@ -48,6 +51,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
   const [kontrakData, setKontrakData] = useState([]);
   const [inventarisMeta, setInventarisMeta] = useState({ total: 0 });
   const [kontrakMeta, setKontrakMeta] = useState({ total: 0 });
+  const [dashboardStats, setDashboardStats] = useState(null);
 
   // Error State
   const [errorMessage, setErrorMessage] = useState('');
@@ -71,11 +75,12 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
         }
       }
 
-      // 2. Ambil data asli dari API Laravel (GET /api/inventaris & GET /api/kontrak)
+      // 2. Ambil data asli dari API Laravel (GET /api/inventaris, GET /api/kontrak, & GET /api/dashboard/stats)
       // Seluruh request ini dilindungi oleh middleware 'auth' Laravel di backend
-      const [invRes, konRes] = await Promise.all([
+      const [invRes, konRes, statsRes] = await Promise.all([
         getInventarisList({ per_page: 100 }),
-        getKontrakList({ per_page: 100 })
+        getKontrakList({ per_page: 100 }),
+        getDashboardStats().catch(() => null)
       ]);
 
       if (invRes?.data) {
@@ -86,6 +91,10 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
       if (konRes?.data) {
         setKontrakData(konRes.data);
         setKontrakMeta(konRes.meta || { total: konRes.data.length });
+      }
+
+      if (statsRes?.data) {
+        setDashboardStats(statsRes.data);
       }
     } catch (err) {
       if (err.status === 401) {
@@ -117,6 +126,9 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
   const handleMenuClick = (menuId, menuName) => {
     setActiveMenu(menuId);
     setSidebarOpen(false);
+    if (menuId === 'dashboard') {
+      fetchDashboardData();
+    }
     if (onMenuChange) {
       onMenuChange(menuId);
     }
@@ -132,10 +144,29 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
     }
   };
 
-  // Kalkulasi statistik dari data asli unit inventaris (menghitung unit riil, bukan dokumen kontrak)
+  // Kalkulasi statistik dari data backend MySQL
   const stats = useMemo(() => {
     const totalInv = inventarisMeta.total || inventarisData.length;
-    const totalKon = kontrakMeta.total || kontrakData.length;
+
+    // Nilai agregasi dokumen kontrak (diprioritaskan dari backend GET /api/dashboard/stats)
+    const totalKon = dashboardStats?.total_dokumen ?? (kontrakMeta.total || kontrakData.length);
+
+    const kontrakAktif = dashboardStats?.kontrak_aktif ?? kontrakData.filter((k) => {
+      const sk = String(k.status_kontrak || '').toUpperCase();
+      return sk === 'AKTIF' || sk === 'SEDANG BERJALAN';
+    }).length;
+
+    const kontrakAkanBerakhir = dashboardStats?.kontrak_akan_berakhir ?? kontrakData.filter((k) => {
+      const sk = String(k.status_kontrak || '').toUpperCase();
+      return sk === 'AKAN BERAKHIR';
+    }).length;
+
+    const kontrakBerakhir = dashboardStats?.kontrak_berakhir ?? kontrakData.filter((k) => {
+      const sk = String(k.status_kontrak || '').toUpperCase();
+      return sk === 'BERAKHIR' || sk === 'HABIS';
+    }).length;
+
+    const totalBiaya = dashboardStats?.akumulasi_komitmen ?? kontrakData.reduce((acc, curr) => acc + (Number(curr.total_biaya) || 0), 0);
 
     // Filter unit inventaris berdasarkan status kontrak sebenarnya:
     // 1. Sewa Aktif: Unit inventaris dengan kontrak aktif (sisa kontrak > 30 hari)
@@ -173,12 +204,12 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
     const statusRusak = inventarisData.filter((i) => i.status_aset === 'Rusak').length;
     const statusHilang = inventarisData.filter((i) => i.status_aset === 'Hilang' || i.status_aset === 'Tidak Ditemukan').length;
 
-    // Total komitmen biaya sewa dari seluruh dokumen kontrak
-    const totalBiaya = kontrakData.reduce((acc, curr) => acc + (Number(curr.total_biaya) || 0), 0);
-
     return {
       totalInv,
       totalKon,
+      kontrakAktif,
+      kontrakAkanBerakhir,
+      kontrakBerakhir,
       sewaAktif,
       akanBerakhir,
       sewaBerakhir,
@@ -190,7 +221,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
       statusHilang,
       totalBiaya
     };
-  }, [inventarisData, inventarisMeta, kontrakData, kontrakMeta]);
+  }, [inventarisData, inventarisMeta, kontrakData, kontrakMeta, dashboardStats]);
 
   // Daftar inventaris terfilter berdasarkan kartu yang diklik pengguna
   const filteredInventarisList = useMemo(() => {
@@ -311,17 +342,17 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
         >
           {/* Sidebar Top: Logo & Company */}
           <div>
-            <div className="h-16 px-5 border-b border-gray-200 flex items-center justify-between">
+            <div className="h-16 px-5 border-b border-gray-200/80 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#F05D24] to-[#D84A15] flex items-center justify-center text-white font-extrabold text-base shadow-md flex-shrink-0">
-                  BK
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#176B7A] to-[#F15A24] flex items-center justify-center text-white font-extrabold text-sm shadow-xs flex-shrink-0">
+                  BKL
                 </div>
                 <div>
-                  <h1 className="font-extrabold text-gray-900 text-xs sm:text-sm tracking-tight leading-none">
+                  <h1 className="font-extrabold text-gray-900 text-xs sm:text-[13px] tracking-tight leading-none">
                     PT BANYAN KOALINDO LESTARI
                   </h1>
-                  <span className="text-[11px] font-medium text-[#6B7280]">
-                    Panel Admin Sewa Beli
+                  <span className="text-[11px] font-semibold text-[#176B7A]">
+                    Inventaris Sewa Beli
                   </span>
                 </div>
               </div>
@@ -347,7 +378,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 onClick={() => handleMenuClick('dashboard', 'Dashboard')}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all ${
                   activeMenu === 'dashboard'
-                    ? 'bg-[#F05D24] text-white shadow-sm'
+                    ? 'bg-[#176B7A] text-white shadow-xs'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
@@ -356,7 +387,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   <span>Dashboard</span>
                 </div>
                 {activeMenu === 'dashboard' && (
-                  <span className="w-2 h-2 rounded-full bg-white" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
                 )}
               </button>
 
@@ -367,7 +398,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 onClick={() => handleMenuClick('inventaris', 'Inventaris')}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all ${
                   activeMenu === 'inventaris'
-                    ? 'bg-[#F05D24] text-white shadow-sm'
+                    ? 'bg-[#176B7A] text-white shadow-xs'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
@@ -376,7 +407,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   <span>Data Inventaris</span>
                 </div>
                 {activeMenu === 'inventaris' && (
-                  <span className="w-2 h-2 rounded-full bg-white" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
                 )}
               </button>
 
@@ -387,7 +418,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 onClick={() => handleMenuClick('kontrak', 'Kontrak')}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all ${
                   activeMenu === 'kontrak'
-                    ? 'bg-[#F05D24] text-white shadow-sm'
+                    ? 'bg-[#176B7A] text-white shadow-xs'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
@@ -396,7 +427,27 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   <span>Data Kontrak</span>
                 </div>
                 {activeMenu === 'kontrak' && (
-                  <span className="w-2 h-2 rounded-full bg-white" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </button>
+
+              {/* Menu 4: Laporan & Ekspor */}
+              <button
+                type="button"
+                id="menu-laporan"
+                onClick={() => handleMenuClick('laporan', 'Laporan')}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all ${
+                  activeMenu === 'laporan'
+                    ? 'bg-[#176B7A] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
+                  <span>Laporan & Ekspor</span>
+                </div>
+                {activeMenu === 'laporan' && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
                 )}
               </button>
 
@@ -409,14 +460,14 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                     setSidebarOpen(false);
                     if (onOpenScanner) onOpenScanner();
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs text-gray-700 hover:bg-orange-50 hover:text-[#F05D24] transition-all border border-gray-200/80 bg-white shadow-2xs"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs text-gray-700 hover:bg-[#F15A24]/10 hover:text-[#F15A24] transition-all border border-gray-200/80 bg-white shadow-2xs"
                   title="Pindai label QR Code inventaris"
                 >
                   <div className="flex items-center space-x-3">
-                    <Camera className="w-4 h-4 text-[#F05D24] flex-shrink-0" />
+                    <Camera className="w-4 h-4 text-[#F15A24] flex-shrink-0" />
                     <span>Pindai QR Code</span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#D84A15] bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
+                  <span className="text-[10px] font-bold text-[#F15A24] bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
                     Kamera
                   </span>
                 </button>
@@ -428,15 +479,22 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
           <div className="p-3 border-t border-gray-200 space-y-2 bg-gray-50/50">
             {/* User Profile Card */}
             <div className="p-2.5 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-lg bg-[#F05D24]/10 border border-[#F05D24]/20 flex items-center justify-center text-[#F05D24] font-bold text-xs flex-shrink-0">
-                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD'}
+              <div className="w-9 h-9 rounded-lg bg-[#176B7A]/10 border border-[#176B7A]/20 flex items-center justify-center text-[#176B7A] font-bold text-xs flex-shrink-0">
+                {user?.role ? (user.role === 'IT' ? 'IT' : 'FN') : (user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD')}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-gray-900 truncate">
-                  {user?.name || 'Administrator'}
-                </p>
+                <div className="flex items-center space-x-1.5">
+                  <p className="text-xs font-bold text-gray-900 truncate">
+                    {user?.name || 'Administrator'}
+                  </p>
+                  {user?.role && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-[#176B7A]/10 text-[#176B7A]">
+                      {user.role}
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-[#6B7280] truncate">
-                  {user?.email || 'admin@bkl.co.id'}
+                  {user?.email || 'it@banyankoalindo.co.id'}
                 </p>
               </div>
             </div>
@@ -474,6 +532,8 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                     ? 'Manajemen Data Inventaris'
                     : activeMenu === 'kontrak'
                     ? 'Manajemen Kontrak Sewa Beli'
+                    : activeMenu === 'laporan'
+                    ? 'Laporan & Ekspor Data'
                     : 'Dashboard Ringkasan Inventaris & Kontrak'}
                 </h2>
                 <p className="text-[11px] text-[#6B7280] hidden sm:block">
@@ -489,7 +549,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 type="button"
                 id="header-btn-pindai-barcode"
                 onClick={onOpenScanner}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#F05D24] to-[#D84A15] hover:from-[#D84A15] hover:to-[#BF3E0F] text-white font-bold text-xs shadow-xs transition-all"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#F15A24] hover:bg-[#D84A15] text-white font-bold text-xs shadow-xs transition-all"
                 title="Pindai label QR Code inventaris menggunakan kamera"
               >
                 <Camera className="w-3.5 h-3.5 text-white" />
@@ -508,17 +568,17 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                     className="p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200 transition-colors disabled:opacity-50"
                     title="Muat ulang data dari API"
                   >
-                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#F05D24]' : ''}`} />
+                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#176B7A]' : ''}`} />
                   </button>
 
                   {/* Export Dashboard PDF */}
                   <a
                     href="/api/dashboard/export/pdf"
                     id="btn-dashboard-export-pdf"
-                    className="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 text-gray-700 hover:text-[#F05D24] font-semibold text-xs shadow-xs transition-colors"
+                    className="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-teal-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-xs transition-colors"
                     title="Unduh Laporan Ringkasan Dashboard (PDF)"
                   >
-                    <Download className="w-3.5 h-3.5 text-[#F05D24]" />
+                    <Download className="w-3.5 h-3.5 text-[#176B7A]" />
                     <span className="hidden xl:inline">PDF</span>
                   </a>
 
@@ -526,10 +586,10 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   <a
                     href="/api/dashboard/export/excel"
                     id="btn-dashboard-export-excel"
-                    className="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 text-gray-700 hover:text-[#F05D24] font-semibold text-xs shadow-xs transition-colors"
+                    className="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-teal-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-xs transition-colors"
                     title="Unduh Laporan Ringkasan Dashboard (Excel XLSX)"
                   >
-                    <Download className="w-3.5 h-3.5 text-[#F05D24]" />
+                    <Download className="w-3.5 h-3.5 text-[#176B7A]" />
                     <span className="hidden xl:inline">Excel</span>
                   </a>
                 </>
@@ -537,15 +597,15 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
 
               {/* User Chip Header */}
               <div className="flex items-center space-x-2 pl-2 border-l border-gray-200">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#F05D24] to-[#D84A15] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                  {user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD'}
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#176B7A] to-[#F15A24] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                  {user?.role ? (user.role === 'IT' ? 'IT' : 'FN') : (user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD')}
                 </div>
                 <div className="hidden sm:block text-left">
                   <div className="text-xs font-bold text-gray-900 leading-tight">
                     {user?.name || 'Administrator'}
                   </div>
                   <div className="text-[10px] text-gray-500 font-medium">
-                    Administrator
+                    {user?.role ? `Divisi ${user.role}` : 'Administrator'}
                   </div>
                 </div>
               </div>
@@ -555,7 +615,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 type="button"
                 id="header-btn-logout"
                 onClick={handleExecuteLogout}
-                className="hidden sm:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-gray-600 hover:text-[#F05D24] hover:bg-orange-50 transition-colors"
+                className="hidden sm:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-gray-600 hover:text-[#F15A24] hover:bg-orange-50 transition-colors"
                 title="Keluar dari sistem"
               >
                 <LogOut className="w-4 h-4" />
@@ -576,66 +636,82 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
               </ErrorBoundary>
             ) : activeMenu === 'kontrak' ? (
               <ErrorBoundary title="Terjadi Kendala pada Halaman Kontrak">
-                <KontrakPage onSessionExpired={onSessionExpired || onLogout} />
+                <KontrakPage
+                  onSessionExpired={onSessionExpired || onLogout}
+                  onDataChanged={fetchDashboardData}
+                />
+              </ErrorBoundary>
+            ) : activeMenu === 'laporan' ? (
+              <ErrorBoundary title="Terjadi Kendala pada Halaman Laporan">
+                <LaporanPage
+                  onSessionExpired={onSessionExpired || onLogout}
+                />
               </ErrorBoundary>
             ) : (
               <>
                 {/* Error Message jika terjadi gangguan koneksi */}
                 {errorMessage && (
-                  <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200 text-orange-950 flex items-start space-x-3 shadow-xs">
-                    <AlertCircle className="w-5 h-5 text-[#F05D24] flex-shrink-0 mt-0.5" />
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 flex items-start space-x-3 shadow-xs">
+                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 text-xs sm:text-sm">
-                      <span className="font-bold">Kendala Koneksi:</span> {errorMessage}
+                      <span className="font-bold">Pemberitahuan Sistem:</span> {errorMessage}
                     </div>
                     <button
                       type="button"
                       onClick={fetchDashboardData}
-                      className="text-xs font-bold text-[#D84A15] hover:underline flex-shrink-0"
+                      className="text-xs font-bold text-amber-700 hover:underline flex-shrink-0"
                     >
                       Coba Lagi
                     </button>
                   </div>
                 )}
 
-            {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-[#F05D24] via-[#D84A15] to-[#BF3E0F] rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-              <div className="relative z-10 max-w-2xl space-y-2">
-                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-semibold text-orange-100 border border-white/15">
-                  <Building2 className="w-3.5 h-3.5 text-white" />
-                  <span>PT Banyan Koalindo Lestari</span>
-                  <span>•</span>
-                  <span>Panel Administrator</span>
+            {/* Modern Executive Overview Header */}
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-gray-200/80 shadow-xs relative overflow-hidden">
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#176B7A]/10 text-[11px] font-bold text-[#176B7A] border border-[#176B7A]/20">
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>PT Banyan Koalindo Lestari</span>
+                    <span>•</span>
+                    <span>Sistem Informasi Inventaris Sewa Beli</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">
+                    Ringkasan Operasional Inventaris & Kontrak
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#6B7280] leading-relaxed">
+                    Pantau ketersediaan aset operasional, masa berlaku kontrak sewa beli, estimasi jatuh tempo, dan rincian komitmen finansial secara akurat.
+                  </p>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-                  Selamat Datang di Panel Inventaris Sewa Beli
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-200 leading-relaxed">
-                  Pantau ketersediaan unit alat berat, masa berlaku kontrak sewa beli, estimasi jatuh tempo, dan rincian aset operasional tambang secara transparan dan akurat.
-                </p>
-              </div>
 
-              {/* Decorative Subtle Accent Circle */}
-              <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-[#F05D24]/20 blur-2xl pointer-events-none" />
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-gray-100">
+                  <div className="text-xs text-gray-500 font-medium">Status Basis Data</div>
+                  <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Terhubung & Aktif</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* 4 SUMMARY METRIC CARDS — INTERAKTIF & DIHITUNG DARI UNIT INVENTARIS RIIL */}
+            {/* 4 SUMMARY METRIC CARDS — INTERAKTIF & DIHITUNG DINAMIS DARI DATA KONTRAK MYSQL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1: Total Inventaris */}
+              {/* Card 1: Total Dokumen */}
               <button
                 type="button"
-                id="card-total-inventaris"
+                id="card-total-dokumen"
                 onClick={() => handleCardClick('semua')}
-                className={`bg-white rounded-2xl p-5 border text-left shadow-sm hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
+                className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
                   selectedCardFilter === 'semua'
-                    ? 'border-[#F05D24] ring-2 ring-[#F05D24]/30 bg-gradient-to-b from-[#F05D24]/5 to-transparent'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-[#176B7A] ring-2 ring-[#176B7A]/20 bg-[#176B7A]/5'
+                    : 'border-gray-200/80 hover:border-gray-300'
                 }`}
-                title="Klik untuk menampilkan seluruh unit inventaris"
+                title="Klik untuk menampilkan seluruh unit inventaris terdaftar"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#6B7280]">Total Inventaris</span>
-                  <div className="w-10 h-10 rounded-xl bg-[#F05D24]/10 text-[#F05D24] flex items-center justify-center">
-                    <Boxes className="w-5 h-5" />
+                  <span className="text-xs font-bold text-[#6B7280]">Total Dokumen</span>
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
+                    <FileText className="w-5 h-5" />
                   </div>
                 </div>
 
@@ -644,33 +720,33 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                     <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
                   ) : (
                     <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                      {stats.totalInv} <span className="text-xs font-semibold text-[#6B7280]">Unit</span>
+                      {stats.totalKon} <span className="text-xs font-semibold text-[#6B7280]">Dokumen</span>
                     </div>
                   )}
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                  <span>Mandiri: {stats.milikMandiri}</span>
+                  <span>Total Unit Terdaftar</span>
                   <span>•</span>
-                  <span>Sewa Beli: {stats.sewaAktif + stats.akanBerakhir + stats.sewaBerakhir} Unit</span>
+                  <span className="font-semibold text-gray-800">{stats.totalInv} Aset</span>
                 </div>
               </button>
 
-              {/* Card 2: Sewa Aktif */}
+              {/* Card 2: Kontrak Aktif */}
               <button
                 type="button"
-                id="card-sewa-aktif"
+                id="card-kontrak-aktif"
                 onClick={() => handleCardClick('sewa_aktif')}
-                className={`bg-white rounded-2xl p-5 border text-left shadow-sm hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
+                className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
                   selectedCardFilter === 'sewa_aktif'
-                    ? 'border-[#F05D24] ring-2 ring-[#F05D24]/30 bg-gradient-to-b from-[#F05D24]/5 to-transparent'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-[#176B7A] ring-2 ring-[#176B7A]/20 bg-[#176B7A]/5'
+                    : 'border-gray-200/80 hover:border-gray-300'
                 }`}
                 title="Klik untuk memfilter unit sewa dengan kontrak aktif"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#6B7280]">Sewa Aktif</span>
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#F05D24] flex items-center justify-center">
+                  <span className="text-xs font-bold text-[#6B7280]">Kontrak Aktif</span>
+                  <div className="w-10 h-10 rounded-xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
                 </div>
@@ -679,15 +755,15 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   {loading ? (
                     <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
                   ) : (
-                    <div className="text-2xl sm:text-3xl font-extrabold text-[#F05D24] tracking-tight">
-                      {stats.sewaAktif} <span className="text-xs font-semibold text-[#6B7280]">Unit</span>
+                    <div className="text-2xl sm:text-3xl font-extrabold text-[#176B7A] tracking-tight">
+                      {stats.kontrakAktif} <span className="text-xs font-semibold text-[#6B7280]">Aktif</span>
                     </div>
                   )}
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                  <span>Sisa Kontrak &gt; 30 Hari</span>
-                  <span className="font-semibold text-[#F05D24]">Aktif Berjalan</span>
+                  <span>Masa sewa berjalan</span>
+                  <span className="font-semibold text-[#176B7A]">&gt; 30 Hari</span>
                 </div>
               </button>
 
@@ -696,16 +772,16 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 type="button"
                 id="card-akan-berakhir"
                 onClick={() => handleCardClick('akan_berakhir')}
-                className={`bg-white rounded-2xl p-5 border text-left shadow-sm hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
+                className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
                   selectedCardFilter === 'akan_berakhir'
-                    ? 'border-[#F05D24] ring-2 ring-[#F05D24]/30 bg-gradient-to-b from-[#F05D24]/5 to-transparent'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-[#F15A24] ring-2 ring-[#F15A24]/20 bg-[#F15A24]/5'
+                    : 'border-gray-200/80 hover:border-gray-300'
                 }`}
-                title="Klik untuk memfilter unit dengan sisa kontrak 1-30 hari (diurutkan sisa hari tersedikit)"
+                title="Klik untuk memfilter unit dengan sisa kontrak 1-30 hari"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#6B7280]">Akan Berakhir</span>
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#D84A15] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#F15A24] flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5" />
                   </div>
                 </div>
@@ -714,50 +790,46 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   {loading ? (
                     <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
                   ) : (
-                    <div className="text-2xl sm:text-3xl font-extrabold text-[#D84A15] tracking-tight">
-                      {stats.akanBerakhir} <span className="text-xs font-semibold text-[#6B7280]">Unit</span>
+                    <div className="text-2xl sm:text-3xl font-extrabold text-[#F15A24] tracking-tight">
+                      {stats.kontrakAkanBerakhir} <span className="text-xs font-semibold text-[#6B7280]">Kontrak</span>
                     </div>
                   )}
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                  <span>Sisa Kontrak 1–30 Hari</span>
-                  <span className="font-semibold text-[#D84A15]">Perlu Perhatian</span>
+                  <span>1–30 Hari Jatuh Tempo</span>
+                  <span className="font-semibold text-[#F15A24]">Perlu Perhatian</span>
                 </div>
               </button>
 
-              {/* Card 4: Sewa Berakhir */}
+              {/* Card 4: Akumulasi Komitmen */}
               <button
                 type="button"
-                id="card-sewa-berakhir"
-                onClick={() => handleCardClick('sewa_berakhir')}
-                className={`bg-white rounded-2xl p-5 border text-left shadow-sm hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
-                  selectedCardFilter === 'sewa_berakhir'
-                    ? 'border-[#F05D24] ring-2 ring-[#F05D24]/30 bg-gradient-to-b from-[#F05D24]/5 to-transparent'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-                title="Klik untuk memfilter unit dengan kontrak sewa yang sudah berakhir (Milik Perusahaan)"
+                id="card-akumulasi-komitmen"
+                onClick={() => handleMenuClick('kontrak', 'Kontrak')}
+                className="bg-white rounded-2xl p-5 border border-gray-200/80 hover:border-gray-300 text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer"
+                title="Klik untuk melihat rincian manajemen kontrak sewa beli"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#6B7280]">Sewa Berakhir</span>
-                  <div className="w-10 h-10 rounded-xl bg-[#F05D24]/10 text-[#F05D24] flex items-center justify-center">
-                    <Building2 className="w-5 h-5" />
+                  <span className="text-xs font-bold text-[#6B7280]">Akumulasi Komitmen</span>
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
+                    <DollarSign className="w-5 h-5" />
                   </div>
                 </div>
 
                 <div className="mt-4">
                   {loading ? (
-                    <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                    <div className="h-8 w-28 bg-gray-200 rounded-lg animate-pulse" />
                   ) : (
-                    <div className="text-2xl sm:text-3xl font-extrabold text-[#F05D24] tracking-tight">
-                      {stats.sewaBerakhir} <span className="text-xs font-semibold text-[#6B7280]">Unit</span>
+                    <div className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight truncate">
+                      {formatRupiah(stats.totalBiaya)}
                     </div>
                   )}
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                  <span>Jatuh Tempo Lewat</span>
-                  <span className="font-semibold text-[#F05D24]">Milik Perusahaan</span>
+                  <span>Estimasi nilai total</span>
+                  <span className="font-semibold text-[#176B7A]">Buka Kontrak &rarr;</span>
                 </div>
               </button>
             </div>
@@ -765,20 +837,20 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
             {/* SECONDARY ROW: KONDISI FISIK ASET & INFORMASI KEUANGAN KONTRAK */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Kolom 1 & 2: Distribusi Status Fisik Aset */}
-              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm space-y-4">
+              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200/80 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                   <div>
                     <h4 className="text-sm font-bold text-gray-900">Distribusi Status Fisik Aset</h4>
-                    <p className="text-xs text-[#6B7280]">Kondisi aktual seluruh aset di lokasi tambang</p>
+                    <p className="text-xs text-[#6B7280]">Kondisi aktual seluruh unit inventaris di lapangan</p>
                   </div>
-                  <span className="text-xs font-semibold text-[#F05D24] bg-[#F05D24]/10 px-2.5 py-1 rounded-lg">
+                  <span className="text-xs font-semibold text-[#176B7A] bg-[#176B7A]/10 px-2.5 py-1 rounded-lg">
                     Total {stats.totalInv} Unit
                   </span>
                 </div>
 
                 {loading ? (
                   <div className="py-8 text-center space-y-3">
-                    <RefreshCw className="w-6 h-6 text-[#F05D24] animate-spin mx-auto" />
+                    <RefreshCw className="w-6 h-6 text-[#176B7A] animate-spin mx-auto" />
                     <p className="text-xs text-[#6B7280]">Memuat distribusi aset...</p>
                   </div>
                 ) : stats.totalInv === 0 ? (
@@ -788,38 +860,38 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {/* Ada / Baik */}
-                    <div className="p-4 rounded-xl bg-orange-50/70 border border-orange-200/80 space-y-1">
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#F05D24]">
+                    <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/70 space-y-1">
+                      <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
                         <span>Aset Tersedia (Ada)</span>
-                        <CheckCircle2 className="w-4 h-4 text-[#F05D24]" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       </div>
-                      <div className="text-2xl font-extrabold text-[#F05D24]">{stats.statusAda}</div>
-                      <div className="text-[11px] text-[#D84A15]">
-                        {Math.round((stats.statusAda / stats.totalInv) * 100)}% dari total aset
+                      <div className="text-2xl font-extrabold text-emerald-700">{stats.statusAda}</div>
+                      <div className="text-[11px] text-emerald-600">
+                        {stats.totalInv ? Math.round((stats.statusAda / stats.totalInv) * 100) : 0}% dari total aset
                       </div>
                     </div>
 
                     {/* Rusak */}
-                    <div className="p-4 rounded-xl bg-orange-100/60 border border-orange-200 space-y-1">
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#D84A15]">
+                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/70 space-y-1">
+                      <div className="flex items-center justify-between text-xs font-semibold text-amber-800">
                         <span>Dalam Perbaikan (Rusak)</span>
-                        <AlertTriangle className="w-4 h-4 text-[#D84A15]" />
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
                       </div>
-                      <div className="text-2xl font-extrabold text-[#D84A15]">{stats.statusRusak}</div>
-                      <div className="text-[11px] text-[#BF3E0F]">
-                        {Math.round((stats.statusRusak / stats.totalInv) * 100)}% dari total aset
+                      <div className="text-2xl font-extrabold text-amber-700">{stats.statusRusak}</div>
+                      <div className="text-[11px] text-amber-600">
+                        {stats.totalInv ? Math.round((stats.statusRusak / stats.totalInv) * 100) : 0}% dari total aset
                       </div>
                     </div>
 
                     {/* Hilang / Tidak Ditemukan */}
-                    <div className="p-4 rounded-xl bg-orange-100 border border-orange-300 space-y-1">
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#BF3E0F]">
+                    <div className="p-4 rounded-xl bg-rose-50/70 border border-rose-200/70 space-y-1">
+                      <div className="flex items-center justify-between text-xs font-semibold text-rose-800">
                         <span>Hilang / Anomali</span>
-                        <AlertCircle className="w-4 h-4 text-[#BF3E0F]" />
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
                       </div>
-                      <div className="text-2xl font-extrabold text-[#BF3E0F]">{stats.statusHilang}</div>
-                      <div className="text-[11px] text-[#BF3E0F]">
-                        {Math.round((stats.statusHilang / stats.totalInv) * 100)}% dari total aset
+                      <div className="text-2xl font-extrabold text-rose-700">{stats.statusHilang}</div>
+                      <div className="text-[11px] text-rose-600">
+                        {stats.totalInv ? Math.round((stats.statusHilang / stats.totalInv) * 100) : 0}% dari total aset
                       </div>
                     </div>
                   </div>
@@ -827,11 +899,11 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
               </div>
 
               {/* Kolom 3: Ringkasan Nilai Komitmen Kontrak */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm space-y-4 flex flex-col justify-between">
+              <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-xs space-y-4 flex flex-col justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold text-gray-900">Nilai Komitmen Sewa</h4>
-                    <span className="w-7 h-7 rounded-lg bg-[#F05D24]/10 text-[#F05D24] flex items-center justify-center font-bold text-xs">
+                    <span className="w-7 h-7 rounded-lg bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center font-bold text-xs">
                       IDR
                     </span>
                   </div>
@@ -843,7 +915,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                     <div className="h-8 w-36 bg-gray-200 rounded-lg animate-pulse" />
                   ) : (
                     <div>
-                      <div className="text-xl sm:text-2xl font-extrabold text-[#F05D24]">
+                      <div className="text-xl sm:text-2xl font-extrabold text-gray-900">
                         {formatRupiah(stats.totalBiaya)}
                       </div>
                       <p className="text-[11px] text-[#6B7280] mt-1">
@@ -853,7 +925,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   )}
                 </div>
 
-                <div className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-[11px] text-[#6B7280] space-y-1.5">
+                <div className="p-3 rounded-xl bg-[#F8FAFC] border border-gray-200 text-[11px] text-[#6B7280] space-y-1.5">
                   <div className="flex justify-between items-center">
                     <span>Rata-rata Nilai Kontrak:</span>
                     <span className="font-bold text-gray-800">
@@ -861,8 +933,8 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Status Kontrak:</span>
-                    <span className="font-bold text-[#F05D24]">
+                    <span>Status Jatuh Tempo:</span>
+                    <span className={`font-bold ${stats.akanBerakhir > 0 ? 'text-[#F15A24]' : 'text-[#176B7A]'}`}>
                       {stats.akanBerakhir > 0 ? `${stats.akanBerakhir} Mendekati Jatuh Tempo` : 'Semua Masa Sewa Terkendali'}
                     </span>
                   </div>
@@ -871,8 +943,8 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
             </div>
 
             {/* PREVIEW TABEL INVENTARIS — MENAMPILKAN DAFTAR SESUAI KATEGORI KARTU YANG DIKLIK */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
+              <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center space-x-2">
                     <h4 className="text-sm font-bold text-gray-900">
@@ -884,7 +956,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                         ? 'Daftar Inventaris Sewa Berakhir (Milik Perusahaan)'
                         : 'Daftar Seluruh Inventaris (Preview)'}
                     </h4>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F05D24]/10 text-[#F05D24] border border-[#F05D24]/20">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#176B7A]/10 text-[#176B7A] border border-[#176B7A]/20">
                       {filteredInventarisList.length} Unit
                     </span>
                   </div>
@@ -895,7 +967,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                       ? 'Unit inventaris dengan masa kontrak berjalan lebih dari 30 hari'
                       : selectedCardFilter === 'sewa_berakhir'
                       ? 'Unit inventaris dengan kontrak telah lewat jatuh tempo dan kepemilikan menjadi milik perusahaan'
-                      : 'Menampilkan data inventaris aset operasional tambang'}
+                      : 'Menampilkan data inventaris aset operasional perusahaan'}
                   </p>
                 </div>
 
@@ -914,7 +986,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                     type="button"
                     id="btn-open-kelola-inventaris"
                     onClick={() => handleOpenInventarisWithFilter(selectedCardFilter)}
-                    className="text-xs font-bold text-[#F05D24] hover:text-[#D84A15] flex items-center space-x-1"
+                    className="text-xs font-bold text-[#176B7A] hover:text-[#0f4e5a] flex items-center space-x-1"
                   >
                     <span>
                       {selectedCardFilter !== 'semua'
@@ -929,21 +1001,21 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
               {/* Table Container */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+                  <thead className="bg-[#F8FAFC] text-[#6B7280] uppercase text-[10px] font-bold tracking-wider border-b border-gray-200">
                     <tr>
-                      <th className="py-3 px-4 font-bold">Kode Inventaris</th>
-                      <th className="py-3 px-4 font-bold">Nama Barang & Merek</th>
-                      <th className="py-3 px-4 font-bold">Kategori</th>
-                      <th className="py-3 px-4 font-bold">Status Fisik</th>
-                      <th className="py-3 px-4 font-bold">Kepemilikan</th>
-                      <th className="py-3 px-4 font-bold">Kontrak & Sisa Hari</th>
+                      <th className="py-3 px-4">Kode Inventaris</th>
+                      <th className="py-3 px-4">Nama Barang & Merek</th>
+                      <th className="py-3 px-4">Kategori</th>
+                      <th className="py-3 px-4">Status Fisik</th>
+                      <th className="py-3 px-4">Kepemilikan</th>
+                      <th className="py-3 px-4">Kontrak & Sisa Hari</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
                         <td colSpan="6" className="py-8 text-center text-gray-500">
-                          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#F05D24] mb-2" />
+                          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#176B7A] mb-2" />
                           Memuat data inventaris...
                         </td>
                       </tr>
@@ -958,8 +1030,8 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                         ? filteredInventarisList.slice(0, 10)
                         : filteredInventarisList
                       ).map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-[#F05D24]">
+                        <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="py-3 px-4 font-mono font-bold text-[#176B7A]">
                             {item.kode_inventaris}
                           </td>
                           <td className="py-3 px-4">
@@ -973,10 +1045,10 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                             <span
                               className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                 item.status_aset === 'Ada'
-                                  ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   : item.status_aset === 'Rusak'
-                                  ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                                  : 'bg-orange-200/80 text-orange-950 border border-orange-400 font-bold'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
                               }`}
                             >
                               {item.status_aset}
@@ -986,8 +1058,8 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                             <span
                               className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
                                 item.status_kepemilikan === 'SEWA' || item.status_kepemilikan === 'Sewa'
-                                  ? 'bg-[#F05D24]/10 text-[#F05D24] border border-[#F05D24]/20'
-                                  : 'bg-orange-50 text-[#F05D24] border border-orange-200'
+                                  ? 'bg-[#176B7A]/10 text-[#176B7A] border border-[#176B7A]/20'
+                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
                               }`}
                             >
                               {item.status_kepemilikan || (item.kontrak_id ? 'SEWA' : 'MILIK PERUSAHAAN')}
@@ -1003,10 +1075,10 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                                   <span
                                     className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                       item.kontrak.sisa_hari !== null && item.kontrak.sisa_hari <= 30 && item.kontrak.sisa_hari >= 0
-                                        ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                                        ? 'bg-[#F15A24]/10 text-[#F15A24] border border-[#F15A24]/20'
                                         : item.kontrak.sisa_hari !== null && item.kontrak.sisa_hari < 0
-                                        ? 'bg-orange-200/80 text-orange-950 border border-orange-400'
-                                        : 'bg-orange-50 text-orange-800 border border-orange-200'
+                                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                     }`}
                                   >
                                     {item.kontrak.sisa_hari !== null
@@ -1030,8 +1102,8 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
             </div>
 
             {/* PREVIEW TABEL 2: 5 KONTRAK SEWA BELI TERBARU (READ-ONLY) */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
+              <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div>
                   <h4 className="text-sm font-bold text-gray-900">Status Kontrak Sewa Beli Terkini</h4>
                   <p className="text-xs text-[#6B7280]">
@@ -1041,7 +1113,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                 <button
                   type="button"
                   onClick={() => handleMenuClick('kontrak', 'Kontrak')}
-                  className="text-xs font-bold text-[#F05D24] hover:text-[#D84A15] flex items-center space-x-1"
+                  className="text-xs font-bold text-[#176B7A] hover:text-[#0f4e5a] flex items-center space-x-1"
                 >
                   <span>Buka Kelola Kontrak</span>
                   <ChevronRight className="w-4 h-4" />
@@ -1051,21 +1123,21 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
               {/* Table Container */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+                  <thead className="bg-[#F8FAFC] text-[#6B7280] uppercase text-[10px] font-bold tracking-wider border-b border-gray-200">
                     <tr>
-                      <th className="py-3 px-4 font-bold">Kode Kontrak</th>
-                      <th className="py-3 px-4 font-bold">Vendor</th>
-                      <th className="py-3 px-4 font-bold">Masa Berlaku</th>
-                      <th className="py-3 px-4 font-bold">Sisa Hari</th>
-                      <th className="py-3 px-4 font-bold">Status</th>
-                      <th className="py-3 px-4 font-bold">Total Nilai</th>
+                      <th className="py-3 px-4">Kode Kontrak</th>
+                      <th className="py-3 px-4">Vendor</th>
+                      <th className="py-3 px-4">Masa Berlaku</th>
+                      <th className="py-3 px-4">Sisa Hari</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Total Nilai</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
                         <td colSpan="6" className="py-8 text-center text-gray-500">
-                          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#F05D24] mb-2" />
+                          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#176B7A] mb-2" />
                           Memuat data kontrak...
                         </td>
                       </tr>
@@ -1077,8 +1149,8 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                       </tr>
                     ) : (
                       kontrakData.slice(0, 5).map((k) => (
-                        <tr key={k.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-[#F05D24]">
+                        <tr key={k.id} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="py-3 px-4 font-mono font-bold text-[#176B7A]">
                             {k.kode_kontrak}
                           </td>
                           <td className="py-3 px-4 font-semibold text-gray-900">{k.vendor}</td>
@@ -1091,10 +1163,10 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                                 k.sisa_hari === null
                                   ? 'bg-gray-100 text-gray-600'
                                   : k.sisa_hari > 30
-                                  ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   : k.sisa_hari >= 0
-                                  ? 'bg-orange-100 text-orange-900 border border-orange-300'
-                                  : 'bg-orange-200/80 text-orange-950 border border-orange-400'
+                                  ? 'bg-[#F15A24]/10 text-[#F15A24] border border-[#F15A24]/20'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
                               }`}
                             >
                               {k.sisa_hari !== null
@@ -1108,10 +1180,10 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                             <span
                               className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                                 String(k.status_kontrak || '').toUpperCase() === 'AKTIF' || String(k.status_kontrak || '').toUpperCase() === 'SEDANG BERJALAN'
-                                  ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   : String(k.status_kontrak || '').toUpperCase() === 'AKAN BERAKHIR'
-                                  ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                                  : 'bg-orange-200/80 text-orange-950 border border-orange-400 font-bold'
+                                  ? 'bg-[#F15A24]/10 text-[#F15A24] border border-[#F15A24]/20'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
                               }`}
                             >
                               {k.status_kontrak}
@@ -1132,15 +1204,15 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
           </main>
 
           {/* DASHBOARD FOOTER */}
-          <footer className="mt-auto bg-white border-t border-gray-200 py-4 px-6 text-xs text-[#6B7280]">
+          <footer className="mt-auto bg-white border-t border-gray-200/80 py-4 px-6 text-xs text-[#6B7280]">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
               <div>
                 &copy; 2026 <strong className="text-gray-900">PT Banyan Koalindo Lestari</strong>. Seluruh hak cipta dilindungi.
               </div>
               <div className="flex items-center space-x-3 text-[11px]">
-                <span className="text-[#F05D24] font-semibold">Sistem Informasi Inventaris Sewa Beli</span>
+                <span className="text-[#176B7A] font-medium">Sistem Informasi Inventaris Sewa Beli</span>
                 <span>•</span>
-                <span className="text-[#F05D24] font-semibold">Dashboard Admin</span>
+                <span className="text-gray-500">Panel Operasional Perusahaan</span>
               </div>
             </div>
           </footer>

@@ -33,8 +33,9 @@ class DashboardController extends Controller
             return in_array($inv->status_kontrak, ['BERAKHIR', 'Habis']);
         })->count();
 
-        $totalKontrak = Kontrak::count();
-        $totalBiayaSewa = Kontrak::sum('biaya_sewa');
+        $allKontrak = Kontrak::all();
+        $totalKontrak = $allKontrak->count();
+        $totalBiayaSewa = (float) $allKontrak->sum(fn($k) => (float) $k->total_biaya);
 
         // Filter for list view based on card clicked
         $filter = $request->get('filter', 'terbaru');

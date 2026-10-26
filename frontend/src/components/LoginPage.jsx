@@ -117,18 +117,18 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
   return (
     <div className="min-h-screen bg-[#F3F4F6] text-[#1F2937] flex flex-col justify-between font-sans">
       {/* Top Header Branding */}
-      <header className="bg-white border-b border-gray-200 shadow-xs">
+      <header className="bg-white border-b border-gray-200/80 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#F05D24] to-[#D84A15] flex items-center justify-center text-white font-extrabold text-lg shadow-md flex-shrink-0">
-              BK
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#176B7A] to-[#0f4e5a] flex items-center justify-center text-white font-extrabold text-base shadow-xs flex-shrink-0">
+              BKL
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-extrabold text-gray-900 tracking-tight text-sm sm:text-base">
                   PT BANYAN KOALINDO LESTARI
                 </span>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F05D24]/10 text-[#F05D24]">
+                <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#176B7A]/10 text-[#176B7A]">
                   Portal Internal
                 </span>
               </div>
@@ -147,7 +147,7 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
           <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-200/80 space-y-6">
             {/* Header Form */}
             <div className="text-center space-y-1.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#F05D24] to-[#D84A15] flex items-center justify-center text-white mx-auto shadow-md mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center mx-auto mb-3 shadow-2xs">
                 <Lock className="w-6 h-6" />
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
@@ -162,9 +162,9 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
             {errorMessage && (
               <div 
                 id="login-error-alert"
-                className="p-3.5 rounded-xl bg-orange-50 border border-orange-200 text-xs text-orange-950 flex items-start space-x-2.5 animate-fadeIn"
+                className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-950 flex items-start space-x-2.5 animate-fadeIn"
               >
-                <AlertCircle className="w-4 h-4 text-[#F05D24] flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                 <p className="leading-relaxed font-medium">{errorMessage}</p>
               </div>
             )}
@@ -199,13 +199,13 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
                     disabled={loading}
                     className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 ${
                       fieldErrors.email
-                        ? 'border-[#F05D24] bg-orange-50/40 focus:border-[#F05D24] focus:ring-[#F05D24]/20 text-orange-950'
-                        : 'border-gray-300 focus:border-[#F05D24] focus:ring-[#F05D24]/20 text-gray-900 bg-white'
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20 text-rose-950'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20 text-gray-900 bg-white'
                     }`}
                   />
                 </div>
                 {fieldErrors.email && (
-                  <p className="text-[11px] text-[#BF3E0F] font-medium pl-1">{fieldErrors.email}</p>
+                  <p className="text-[11px] text-rose-600 font-medium pl-1">{fieldErrors.email}</p>
                 )}
               </div>
 
@@ -239,8 +239,8 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
                     disabled={loading}
                     className={`w-full pl-10 pr-11 py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 ${
                       fieldErrors.password
-                        ? 'border-[#F05D24] bg-orange-50/40 focus:border-[#F05D24] focus:ring-[#F05D24]/20 text-orange-950'
-                        : 'border-gray-300 focus:border-[#F05D24] focus:ring-[#F05D24]/20 text-gray-900 bg-white'
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20 text-rose-950'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20 text-gray-900 bg-white'
                     }`}
                   />
                   <button
@@ -259,7 +259,7 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
                   </button>
                 </div>
                 {fieldErrors.password && (
-                  <p className="text-[11px] text-[#BF3E0F] font-medium pl-1">{fieldErrors.password}</p>
+                  <p className="text-[11px] text-rose-600 font-medium pl-1">{fieldErrors.password}</p>
                 )}
               </div>
 
@@ -272,7 +272,7 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
                     disabled={loading}
-                    className="w-4 h-4 rounded text-[#F05D24] border-gray-300 focus:ring-[#F05D24]/30 cursor-pointer"
+                    className="w-4 h-4 rounded text-[#176B7A] border-gray-300 focus:ring-[#176B7A]/30 cursor-pointer"
                   />
                   <span className="text-xs text-[#6B7280]">Ingat saya di perangkat ini</span>
                 </label>
@@ -283,7 +283,7 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
                 id="btn-submit-login"
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#F05D24] to-[#d84a15] hover:from-[#d84a15] hover:to-[#bf3e0f] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-[#F15A24] hover:bg-[#d84a15] text-white font-bold text-sm shadow-xs transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -310,10 +310,10 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
                 type="button"
                 id="btn-login-pindai-barcode"
                 onClick={onOpenScanner}
-                className="w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-[#F05D24] bg-orange-50/50 hover:bg-orange-50/90 text-[#F05D24] font-bold text-xs shadow-xs hover:shadow-sm transition-all duration-200 flex items-center justify-center space-x-2"
+                className="w-full py-2.5 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-2xs transition-all duration-200 flex items-center justify-center space-x-2"
                 title="Pindai label QR Code inventaris menggunakan kamera"
               >
-                <Camera className="w-4 h-4 text-[#F05D24]" />
+                <Camera className="w-4 h-4 text-[#176B7A]" />
                 <span>Pindai QR Code (Kamera HP)</span>
               </button>
             </div>
@@ -321,7 +321,7 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
             {/* Informasi Akses Resmi */}
             <div className="pt-4 border-t border-gray-100">
               <div className="flex items-center justify-center space-x-2 text-[11px] text-[#6B7280]">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#F05D24]" />
+                <ShieldCheck className="w-3.5 h-3.5 text-[#176B7A]" />
                 <span>Akses Terbatas Khusus Pengguna Berwenang</span>
               </div>
             </div>
@@ -330,11 +330,11 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-4 text-center text-xs text-[#6B7280]">
+      <footer className="bg-white border-t border-gray-200/80 py-4 text-center text-xs text-[#6B7280]">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
           <span>&copy; 2026 PT Banyan Koalindo Lestari. Hak Cipta Dilindungi.</span>
           <div className="flex items-center space-x-3 text-xs">
-            <span className="text-[#F05D24] font-semibold">Sistem Informasi Inventaris Sewa Beli</span>
+            <span className="text-[#176B7A] font-medium">Sistem Informasi Inventaris Sewa Beli</span>
           </div>
         </div>
       </footer>

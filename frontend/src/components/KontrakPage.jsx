@@ -53,9 +53,10 @@ const formatDate = (dateStr) => {
   }
 };
 
-export default function KontrakPage({ onSessionExpired }) {
+export default function KontrakPage({ onSessionExpired, onDataChanged }) {
   // State Data & Paginasi
   const [kontrakList, setKontrakList] = useState([]);
+  const [kpiData, setKpiData] = useState(null);
   const [meta, setMeta] = useState({
     current_page: 1,
     last_page: 1,
@@ -135,6 +136,9 @@ export default function KontrakPage({ onSessionExpired }) {
         setKontrakList(res.data);
         if (res.meta) {
           setMeta(res.meta);
+        }
+        if (res.kpi) {
+          setKpiData(res.kpi);
         }
       }
     } catch (err) {
@@ -273,6 +277,9 @@ export default function KontrakPage({ onSessionExpired }) {
 
       setFormModalOpen(false);
       fetchKontrakData();
+      if (onDataChanged) {
+        onDataChanged();
+      }
     } catch (err) {
       if (err.status === 401) {
         if (onSessionExpired) onSessionExpired();
@@ -306,6 +313,9 @@ export default function KontrakPage({ onSessionExpired }) {
       setShowDeleteModal(false);
       setDeleteItem(null);
       fetchKontrakData();
+      if (onDataChanged) {
+        onDataChanged();
+      }
     } catch (err) {
       if (err.status === 401) {
         if (onSessionExpired) onSessionExpired();
@@ -320,8 +330,17 @@ export default function KontrakPage({ onSessionExpired }) {
     }
   };
 
-  // Ringkasan KPI Mini di atas tabel
+  // Ringkasan KPI Mini di atas tabel — diprioritaskan dari kalkulasi backend MySQL
   const kpiSummary = useMemo(() => {
+    if (kpiData) {
+      return {
+        total: kpiData.total,
+        aktif: kpiData.aktif,
+        akanBerakhir: kpiData.akan_berakhir,
+        berakhir: kpiData.berakhir,
+        totalKomitmen: kpiData.total_komitmen,
+      };
+    }
     const total = meta.total || kontrakList.length;
     const aktif = kontrakList.filter((k) => k.status_kontrak === 'AKTIF' || k.status_kontrak === 'Sedang Berjalan').length;
     const akanBerakhir = kontrakList.filter((k) => k.status_kontrak === 'AKAN BERAKHIR' || k.status_kontrak === 'Akan Berakhir').length;
@@ -329,17 +348,22 @@ export default function KontrakPage({ onSessionExpired }) {
     const totalKomitmen = kontrakList.reduce((acc, curr) => acc + (Number(curr.total_biaya) || 0), 0);
 
     return { total, aktif, akanBerakhir, berakhir, totalKomitmen };
-  }, [kontrakList, meta.total]);
+  }, [kpiData, kontrakList, meta.total]);
 
   return (
     <div className="space-y-6">
       {/* 1. TOP HEADER & ACTION BAR */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
         <div>
-          <h2 className="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight flex items-center space-x-2 flex-wrap gap-y-1">
-            <FileText className="w-5 h-5 text-[#F05D24] flex-shrink-0" />
+          <div className="flex items-center space-x-2 text-xs text-[#6B7280] mb-1">
+            <span>Dashboard</span>
+            <span>/</span>
+            <span className="text-[#176B7A] font-semibold">Manajemen Kontrak</span>
+          </div>
+          <h2 className="text-xl font-extrabold text-gray-900 tracking-tight flex items-center space-x-2.5 flex-wrap gap-y-1">
+            <FileText className="w-6 h-6 text-[#176B7A] flex-shrink-0" />
             <span>Manajemen Kontrak Sewa Beli</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F05D24]/10 text-[#F05D24] border border-[#F05D24]/20">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#176B7A]/10 text-[#176B7A] border border-[#176B7A]/20">
               {meta.total} Total Dokumen
             </span>
           </h2>
@@ -358,17 +382,17 @@ export default function KontrakPage({ onSessionExpired }) {
             className="p-2.5 rounded-xl border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
             title="Muat Ulang Data Kontrak"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#F05D24]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#176B7A]' : ''}`} />
           </button>
 
           {/* Export PDF Button */}
           <a
             href={`/api/kontrak/export/pdf${filterStatus ? `?status=${encodeURIComponent(filterStatus)}` : ''}`}
             id="btn-export-kontrak-pdf"
-            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 text-gray-700 hover:text-[#F05D24] font-semibold text-xs shadow-xs transition-colors"
+            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-slate-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-2xs transition-colors"
             title="Unduh Laporan Kontrak format PDF"
           >
-            <Download className="w-4 h-4 text-[#F05D24]" />
+            <Download className="w-4 h-4 text-[#F15A24]" />
             <span className="hidden md:inline">Export PDF</span>
           </a>
 
@@ -376,10 +400,10 @@ export default function KontrakPage({ onSessionExpired }) {
           <a
             href={`/api/kontrak/export/excel${filterStatus ? `?status=${encodeURIComponent(filterStatus)}` : ''}`}
             id="btn-export-kontrak-excel"
-            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 text-gray-700 hover:text-[#F05D24] font-semibold text-xs shadow-xs transition-colors"
+            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-slate-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-2xs transition-colors"
             title="Unduh Laporan Kontrak format Excel (XLSX)"
           >
-            <Download className="w-4 h-4 text-[#F05D24]" />
+            <Download className="w-4 h-4 text-emerald-600" />
             <span className="hidden md:inline">Export Excel</span>
           </a>
 
@@ -388,7 +412,7 @@ export default function KontrakPage({ onSessionExpired }) {
             type="button"
             id="btn-tambah-kontrak"
             onClick={handleOpenCreate}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#F05D24] to-[#d84a15] hover:from-[#d84a15] hover:to-[#bf3e0f] text-white font-bold text-xs shadow-md transition-all duration-200"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-[#F15A24] hover:bg-[#d84a15] text-white font-bold text-xs shadow-xs transition-all duration-200"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Kontrak</span>
@@ -402,15 +426,15 @@ export default function KontrakPage({ onSessionExpired }) {
           id="kontrak-alert-box"
           className={`p-4 rounded-2xl border text-xs sm:text-sm flex items-start justify-between shadow-xs transition-all ${
             alert.type === 'success'
-              ? 'bg-orange-50 border-orange-200 text-orange-950'
-              : 'bg-orange-100/70 border-orange-300 text-orange-950'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+              : 'bg-rose-50 border-rose-200 text-rose-950'
           }`}
         >
           <div className="flex items-center space-x-2.5">
             {alert.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-[#F05D24] flex-shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-[#D84A15] flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
             )}
             <span className="font-semibold">{alert.message}</span>
           </div>
@@ -426,53 +450,65 @@ export default function KontrakPage({ onSessionExpired }) {
 
       {/* 3. MINI KPI SUMMARY CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
+        {/* Total Dokumen */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#6B7280]">
             <span>Total Dokumen</span>
-            <FileText className="w-4 h-4 text-[#F05D24]" />
+            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </div>
           </div>
           <div className="text-xl sm:text-2xl font-black text-gray-900 mt-2">
-            {kpiSummary.total} <span className="text-xs font-semibold text-gray-500">Kontrak</span>
+            {kpiSummary.total} <span className="text-xs font-semibold text-[#6B7280]">Kontrak</span>
           </div>
-          <div className="text-[11px] text-gray-500 mt-1">Tercatat di sistem</div>
+          <div className="text-[11px] text-[#6B7280] mt-1">Tersimpan di database</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-semibold text-[#F05D24]">
+        {/* Kontrak Aktif */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#176B7A]">
             <span>Kontrak Aktif</span>
-            <CheckCircle2 className="w-4 h-4 text-[#F05D24]" />
+            <div className="w-8 h-8 rounded-lg bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-[#F05D24] mt-2">
-            {kpiSummary.aktif} <span className="text-xs font-semibold text-[#D84A15]">Aktif</span>
+          <div className="text-xl sm:text-2xl font-black text-[#176B7A] mt-2">
+            {kpiSummary.aktif} <span className="text-xs font-semibold text-[#176B7A]">Aktif</span>
           </div>
-          <div className="text-[11px] text-[#D84A15] mt-1">Masa sewa berjalan</div>
+          <div className="text-[11px] text-[#6B7280] mt-1">Masa sewa &gt; 30 hari</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-semibold text-[#D84A15]">
+        {/* Akan Berakhir */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#F15A24]">
             <span>Akan Berakhir</span>
-            <AlertTriangle className="w-4 h-4 text-[#D84A15]" />
+            <div className="w-8 h-8 rounded-lg bg-[#F15A24]/10 text-[#F15A24] flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-[#D84A15] mt-2">
-            {kpiSummary.akanBerakhir} <span className="text-xs font-semibold text-[#BF3E0F]">Kontrak</span>
+          <div className="text-xl sm:text-2xl font-black text-[#F15A24] mt-2">
+            {kpiSummary.akanBerakhir} <span className="text-xs font-semibold text-[#F15A24]">Kontrak</span>
           </div>
-          <div className="text-[11px] text-[#BF3E0F] mt-1">&le; 30 hari jatuh tempo</div>
+          <div className="text-[11px] text-[#6B7280] mt-1">1–30 hari jatuh tempo</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
+        {/* Akumulasi Komitmen */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#6B7280]">
             <span>Akumulasi Komitmen</span>
-            <DollarSign className="w-4 h-4 text-[#F05D24]" />
+            <div className="w-8 h-8 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center">
+              <DollarSign className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-base sm:text-lg font-black text-[#F05D24] mt-2 truncate">
+          <div className="text-base sm:text-lg font-black text-gray-900 mt-2 truncate">
             {formatRupiah(kpiSummary.totalKomitmen)}
           </div>
-          <div className="text-[11px] text-gray-500 mt-1">Estimasi nilai total</div>
+          <div className="text-[11px] text-[#6B7280] mt-1">Estimasi nilai total</div>
         </div>
       </div>
 
       {/* 4. SEARCH & FILTER TOOLBAR */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-3">
         <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -483,7 +519,7 @@ export default function KontrakPage({ onSessionExpired }) {
               placeholder="Cari nomor kontrak, nama vendor, atau keterangan..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05D24] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20 transition-all"
             />
             {searchTerm && (
               <button
@@ -508,7 +544,7 @@ export default function KontrakPage({ onSessionExpired }) {
                 setFilterStatus(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F05D24] focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm bg-white text-gray-700 focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20 transition-all"
             >
               <option value="">Semua Status</option>
               <option value="AKTIF">Aktif (&gt; 30 hari)</option>
@@ -528,7 +564,7 @@ export default function KontrakPage({ onSessionExpired }) {
                 setSortOrder(so);
                 setPage(1);
               }}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F05D24] focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm bg-white text-gray-700 focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20 transition-all"
             >
               <option value="tanggal_berakhir-asc">Jatuh Tempo Terdekat</option>
               <option value="tanggal_berakhir-desc">Jatuh Tempo Terjauh</option>
@@ -541,7 +577,7 @@ export default function KontrakPage({ onSessionExpired }) {
 
           <button
             type="submit"
-            className="px-4 py-2.5 rounded-xl bg-[#F05D24] hover:bg-[#D84A15] text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center space-x-1"
+            className="px-4 py-2.5 rounded-xl bg-[#176B7A] hover:bg-[#0f4e5a] text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center space-x-1"
           >
             <span>Terapkan</span>
           </button>
@@ -549,26 +585,26 @@ export default function KontrakPage({ onSessionExpired }) {
       </div>
 
       {/* 5. DATA TABLE KONTRAK */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table id="table-kontrak" className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-gray-600 uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <thead className="bg-[#F8FAFC] text-[#6B7280] uppercase text-[10px] font-bold tracking-wider border-b border-gray-200">
               <tr>
-                <th className="py-3.5 px-4 font-bold">No. Kontrak</th>
-                <th className="py-3.5 px-4 font-bold">Vendor & Keterangan</th>
-                <th className="py-3.5 px-4 font-bold">Masa Berlaku</th>
-                <th className="py-3.5 px-4 font-bold">Sisa Waktu</th>
-                <th className="py-3.5 px-4 font-bold text-right">Biaya Sewa / Bln</th>
-                <th className="py-3.5 px-4 font-bold text-center">Status</th>
-                <th className="py-3.5 px-4 font-bold text-center">Aset Terikat</th>
-                <th className="py-3.5 px-4 font-bold text-center">Aksi</th>
+                <th className="py-3.5 px-4">No. Kontrak</th>
+                <th className="py-3.5 px-4">Vendor & Keterangan</th>
+                <th className="py-3.5 px-4">Masa Berlaku</th>
+                <th className="py-3.5 px-4">Sisa Waktu</th>
+                <th className="py-3.5 px-4 text-right">Biaya Sewa / Bln</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Aset Terikat</th>
+                <th className="py-3.5 px-4 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
                   <td colSpan="8" className="py-12 text-center text-gray-500">
-                    <RefreshCw className="w-6 h-6 animate-spin text-[#F05D24] mx-auto mb-2" />
+                    <RefreshCw className="w-6 h-6 animate-spin text-[#176B7A] mx-auto mb-2" />
                     <span>Memuat data kontrak dari server...</span>
                   </td>
                 </tr>
@@ -586,7 +622,7 @@ export default function KontrakPage({ onSessionExpired }) {
                 kontrakList.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
                     {/* Kode Kontrak */}
-                    <td className="py-3.5 px-4 font-mono font-bold text-[#F05D24]">
+                    <td className="py-3.5 px-4 font-mono font-bold text-[#176B7A]">
                       {item.kode_kontrak}
                     </td>
 
@@ -611,10 +647,10 @@ export default function KontrakPage({ onSessionExpired }) {
                       <span
                         className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
                           item.sisa_hari !== null && item.sisa_hari < 0
-                            ? 'bg-orange-200/80 text-orange-950 border border-orange-400'
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
                             : item.sisa_hari !== null && item.sisa_hari <= 30
-                            ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                            : 'bg-orange-50 text-orange-800 border border-orange-200'
+                            ? 'bg-[#F15A24]/10 text-[#F15A24] border border-[#F15A24]/20'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}
                       >
                         <Clock className="w-3 h-3" />
@@ -633,10 +669,10 @@ export default function KontrakPage({ onSessionExpired }) {
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
                           item.status_kontrak === 'AKTIF' || item.status_kontrak === 'Sedang Berjalan'
-                            ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : item.status_kontrak === 'AKAN BERAKHIR' || item.status_kontrak === 'Akan Berakhir'
-                            ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                            : 'bg-orange-200/80 text-orange-950 border border-orange-400 font-bold'
+                            ? 'bg-[#F15A24]/10 text-[#F15A24] border border-[#F15A24]/20'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}
                       >
                         {item.status_kontrak}
@@ -646,7 +682,7 @@ export default function KontrakPage({ onSessionExpired }) {
                     {/* Aset Terikat */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-gray-100 text-gray-700 font-bold text-[11px]">
-                        <Boxes className="w-3.5 h-3.5 text-[#F05D24]" />
+                        <Boxes className="w-3.5 h-3.5 text-[#176B7A]" />
                         <span>{item.jumlah_inventaris || 0} unit</span>
                       </span>
                     </td>
@@ -658,7 +694,7 @@ export default function KontrakPage({ onSessionExpired }) {
                         <button
                           type="button"
                           onClick={() => handleOpenDetail(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F05D24] hover:bg-orange-50 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#176B7A] hover:bg-[#176B7A]/10 transition-colors"
                           title="Lihat Rincian Kontrak"
                         >
                           <Eye className="w-4 h-4" />
@@ -668,7 +704,7 @@ export default function KontrakPage({ onSessionExpired }) {
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F05D24] hover:bg-orange-50 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F15A24] hover:bg-[#F15A24]/10 transition-colors"
                           title="Ubah Data Kontrak"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -678,7 +714,7 @@ export default function KontrakPage({ onSessionExpired }) {
                         <button
                           type="button"
                           onClick={() => handleOpenDelete(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F05D24] hover:bg-orange-50 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Hapus Kontrak"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -693,7 +729,7 @@ export default function KontrakPage({ onSessionExpired }) {
         </div>
 
         {/* 6. PAGINATION FOOTER */}
-        <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
+        <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#6B7280]">
           <div>
             Menampilkan <span className="font-bold text-gray-900">{kontrakList.length > 0 ? (meta.current_page - 1) * meta.per_page + 1 : 0}</span> s/d{' '}
             <span className="font-bold text-gray-900">{Math.min(meta.current_page * meta.per_page, meta.total)}</span> dari{' '}
@@ -707,7 +743,7 @@ export default function KontrakPage({ onSessionExpired }) {
                 setPerPage(Number(e.target.value));
                 setPage(1);
               }}
-              className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs bg-white focus:outline-none"
+              className="px-2.5 py-1.5 rounded-xl border border-gray-200 text-xs bg-white text-gray-700 focus:outline-none"
             >
               <option value="10">10 per hal</option>
               <option value="25">25 per hal</option>
@@ -718,13 +754,13 @@ export default function KontrakPage({ onSessionExpired }) {
               type="button"
               disabled={meta.current_page <= 1 || loading}
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="p-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
               title="Halaman Sebelumnya"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <span className="font-bold px-2">
+            <span className="font-bold px-2 text-[#176B7A]">
               Hal {meta.current_page} / {meta.last_page || 1}
             </span>
 
@@ -732,7 +768,7 @@ export default function KontrakPage({ onSessionExpired }) {
               type="button"
               disabled={meta.current_page >= meta.last_page || loading}
               onClick={() => setPage((p) => p + 1)}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="p-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
               title="Halaman Berikutnya"
             >
               <ChevronRight className="w-4 h-4" />
@@ -748,19 +784,19 @@ export default function KontrakPage({ onSessionExpired }) {
         <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 flex flex-col">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-xs z-10">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-[#F8FAFC] backdrop-blur-xs z-10">
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className="font-mono text-xs font-black text-[#F05D24] bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-100">
+                  <span className="font-mono text-xs font-bold text-[#176B7A] bg-white px-2.5 py-1 rounded-lg border border-gray-200">
                     {detailItem.kode_kontrak}
                   </span>
                   <span
                     className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
                       detailItem.status_kontrak === 'AKTIF' || detailItem.status_kontrak === 'Sedang Berjalan'
-                        ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         : detailItem.status_kontrak === 'AKAN BERAKHIR' || detailItem.status_kontrak === 'Akan Berakhir'
-                        ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                        : 'bg-orange-200/80 text-orange-950 border border-orange-400 font-bold'
+                        ? 'bg-[#F15A24]/10 text-[#F15A24] border border-[#F15A24]/20'
+                        : 'bg-rose-50 text-rose-700 border border-rose-200'
                     }`}
                   >
                     {detailItem.status_kontrak}
@@ -781,38 +817,38 @@ export default function KontrakPage({ onSessionExpired }) {
             <div className="p-6 space-y-6">
               {loadingDetail ? (
                 <div className="py-8 text-center text-gray-500">
-                  <RefreshCw className="w-6 h-6 animate-spin text-[#F05D24] mx-auto mb-2" />
+                  <RefreshCw className="w-6 h-6 animate-spin text-[#176B7A] mx-auto mb-2" />
                   <span>Memuat rincian inventaris terikat...</span>
                 </div>
               ) : (
                 <>
                   {/* Grid Rincian Kontrak */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50/70 p-4 rounded-2xl border border-gray-200 text-xs">
                     <div>
-                      <span className="text-gray-500 text-[11px] block">Masa Berlaku Kontrak:</span>
+                      <span className="text-[#6B7280] text-[11px] block">Masa Berlaku Kontrak:</span>
                       <span className="font-bold text-gray-900">
                         {formatDate(detailItem.tanggal_mulai)} s/d {formatDate(detailItem.tanggal_berakhir)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500 text-[11px] block">Durasi Kontrak:</span>
+                      <span className="text-[#6B7280] text-[11px] block">Durasi Kontrak:</span>
                       <span className="font-bold text-gray-900">{detailItem.durasi || '-'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500 text-[11px] block">Sisa Masa Kontrak:</span>
-                      <span className="font-bold text-[#F05D24]">{detailItem.sisa_kontrak || '-'}</span>
+                      <span className="text-[#6B7280] text-[11px] block">Sisa Masa Kontrak:</span>
+                      <span className="font-bold text-[#F15A24]">{detailItem.sisa_kontrak || '-'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500 text-[11px] block">Biaya Sewa Bulanan:</span>
+                      <span className="text-[#6B7280] text-[11px] block">Biaya Sewa Bulanan:</span>
                       <span className="font-bold text-gray-900">{formatRupiah(detailItem.biaya_sewa)}</span>
                     </div>
                     <div className="sm:col-span-2 pt-2 border-t border-gray-200/80">
-                      <span className="text-gray-500 text-[11px] block">Estimasi Total Nilai Komitmen:</span>
-                      <span className="font-extrabold text-sm text-[#F05D24]">{formatRupiah(detailItem.total_biaya)}</span>
+                      <span className="text-[#6B7280] text-[11px] block">Estimasi Total Nilai Komitmen:</span>
+                      <span className="font-extrabold text-sm text-gray-900">{formatRupiah(detailItem.total_biaya)}</span>
                     </div>
                     {detailItem.keterangan && (
                       <div className="sm:col-span-2 pt-2 border-t border-gray-200/80">
-                        <span className="text-gray-500 text-[11px] block">Keterangan / Catatan:</span>
+                        <span className="text-[#6B7280] text-[11px] block">Keterangan / Catatan:</span>
                         <p className="text-gray-800 whitespace-pre-line mt-0.5">{detailItem.keterangan}</p>
                       </div>
                     )}
@@ -822,7 +858,7 @@ export default function KontrakPage({ onSessionExpired }) {
                   <div>
                     <div className="flex items-center justify-between mb-2.5">
                       <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide flex items-center space-x-1.5">
-                        <Boxes className="w-4 h-4 text-[#F05D24]" />
+                        <Boxes className="w-4 h-4 text-[#176B7A]" />
                         <span>Aset Inventaris Terkait ({detailItem.inventaris ? detailItem.inventaris.length : 0} Unit)</span>
                       </h4>
                     </div>
@@ -830,19 +866,19 @@ export default function KontrakPage({ onSessionExpired }) {
                     {detailItem.inventaris && detailItem.inventaris.length > 0 ? (
                       <div className="rounded-xl border border-gray-200 overflow-hidden">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-gray-50 text-gray-600 text-[10px] uppercase font-bold border-b border-gray-200">
+                          <thead className="bg-[#F8FAFC] text-[#6B7280] text-[10px] uppercase font-bold border-b border-gray-200">
                             <tr>
                               <th className="py-2.5 px-3">Kode Aset</th>
                               <th className="py-2.5 px-3">Nama Barang</th>
                               <th className="py-2.5 px-3">Kategori</th>
                               <th className="py-2.5 px-3">Lokasi</th>
-                              <th className="py-2.5 px-3 text-center">Kondisi Aset</th>
+                              <th className="py-2.5 px-3 text-center">Status Aset</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
                             {detailItem.inventaris.map((inv) => (
-                              <tr key={inv.id} className="hover:bg-gray-50">
-                                <td className="py-2.5 px-3 font-mono font-bold text-[#F05D24]">{inv.kode_inventaris}</td>
+                              <tr key={inv.id} className="hover:bg-gray-50/80">
+                                <td className="py-2.5 px-3 font-mono font-bold text-[#176B7A]">{inv.kode_inventaris}</td>
                                 <td className="py-2.5 px-3 font-semibold text-gray-900">{inv.nama_barang}</td>
                                 <td className="py-2.5 px-3 text-gray-600">{inv.kategori || '-'}</td>
                                 <td className="py-2.5 px-3 text-gray-600">{inv.lokasi || '-'}</td>
@@ -850,10 +886,10 @@ export default function KontrakPage({ onSessionExpired }) {
                                   <span
                                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                       inv.status_aset === 'Ada'
-                                        ? 'bg-orange-50 text-orange-800 border border-orange-200'
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                         : inv.status_aset === 'Rusak'
-                                        ? 'bg-orange-100 text-orange-900 border border-orange-300 font-bold'
-                                        : 'bg-orange-200/80 text-orange-950 border border-orange-400 font-bold'
+                                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                        : 'bg-rose-50 text-rose-700 border border-rose-200'
                                     }`}
                                   >
                                     {inv.status_aset}
@@ -875,7 +911,7 @@ export default function KontrakPage({ onSessionExpired }) {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-gray-200 flex justify-end space-x-2 bg-gray-50 rounded-b-3xl">
+            <div className="p-4 border-t border-gray-200 flex justify-end space-x-2 bg-[#F8FAFC] rounded-b-3xl">
               <button
                 type="button"
                 onClick={() => {
@@ -889,7 +925,7 @@ export default function KontrakPage({ onSessionExpired }) {
               <button
                 type="button"
                 onClick={() => setShowDetailModal(false)}
-                className="px-4 py-2 rounded-xl bg-[#F05D24] hover:bg-[#D84A15] text-white font-bold text-xs transition-colors"
+                className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs transition-colors"
               >
                 Tutup
               </button>
@@ -905,12 +941,12 @@ export default function KontrakPage({ onSessionExpired }) {
         <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 flex flex-col">
             {/* Header Form */}
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-xs z-10">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-[#F8FAFC] backdrop-blur-xs z-10">
               <div>
                 <h3 className="text-base font-extrabold text-gray-900">
                   {isEditMode ? `Ubah Kontrak (${formData.kode_kontrak})` : 'Tambah Kontrak Sewa Beli Baru'}
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-[#6B7280] mt-0.5">
                   Isi data perjanjian kontrak sewa beli dengan vendor terkait
                 </p>
               </div>
@@ -929,7 +965,7 @@ export default function KontrakPage({ onSessionExpired }) {
               {/* Kode Kontrak */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Nomor / Kode Kontrak <span className="text-[#F05D24]">*</span>
+                  Nomor / Kode Kontrak <span className="text-[#F15A24]">*</span>
                 </label>
                 <input
                   type="text"
@@ -937,19 +973,21 @@ export default function KontrakPage({ onSessionExpired }) {
                   placeholder="Misal: KON-2026-006"
                   value={formData.kode_kontrak}
                   onChange={(e) => setFormData({ ...formData, kode_kontrak: e.target.value.toUpperCase() })}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#F05D24] ${
-                    fieldErrors.kode_kontrak ? 'border-[#F05D24] bg-orange-50/40' : 'border-gray-200'
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-mono uppercase focus:outline-none focus:ring-2 ${
+                    fieldErrors.kode_kontrak
+                      ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                      : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                   }`}
                 />
                 {fieldErrors.kode_kontrak && (
-                  <p className="text-[11px] text-[#BF3E0F] mt-1">{fieldErrors.kode_kontrak[0]}</p>
+                  <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.kode_kontrak[0]}</p>
                 )}
               </div>
 
               {/* Vendor */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Nama Vendor / Penyedia <span className="text-[#F05D24]">*</span>
+                  Nama Vendor / Penyedia <span className="text-[#F15A24]">*</span>
                 </label>
                 <input
                   type="text"
@@ -957,12 +995,14 @@ export default function KontrakPage({ onSessionExpired }) {
                   placeholder="Misal: PT United Tractors Tbk"
                   value={formData.vendor}
                   onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05D24] ${
-                    fieldErrors.vendor ? 'border-[#F05D24] bg-orange-50/40' : 'border-gray-200'
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 ${
+                    fieldErrors.vendor
+                      ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                      : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                   }`}
                 />
                 {fieldErrors.vendor && (
-                  <p className="text-[11px] text-[#BF3E0F] mt-1">{fieldErrors.vendor[0]}</p>
+                  <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.vendor[0]}</p>
                 )}
               </div>
 
@@ -970,37 +1010,41 @@ export default function KontrakPage({ onSessionExpired }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Tanggal Mulai <span className="text-[#F05D24]">*</span>
+                    Tanggal Mulai <span className="text-[#F15A24]">*</span>
                   </label>
                   <input
                     type="date"
                     required
                     value={formData.tanggal_mulai}
                     onChange={(e) => setFormData({ ...formData, tanggal_mulai: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05D24] ${
-                      fieldErrors.tanggal_mulai ? 'border-[#F05D24] bg-orange-50/40' : 'border-gray-200'
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 ${
+                      fieldErrors.tanggal_mulai
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                     }`}
                   />
                   {fieldErrors.tanggal_mulai && (
-                    <p className="text-[11px] text-[#BF3E0F] mt-1">{fieldErrors.tanggal_mulai[0]}</p>
+                    <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.tanggal_mulai[0]}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Tanggal Berakhir <span className="text-[#F05D24]">*</span>
+                    Tanggal Berakhir <span className="text-[#F15A24]">*</span>
                   </label>
                   <input
                     type="date"
                     required
                     value={formData.tanggal_berakhir}
                     onChange={(e) => setFormData({ ...formData, tanggal_berakhir: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05D24] ${
-                      fieldErrors.tanggal_berakhir ? 'border-[#F05D24] bg-orange-50/40' : 'border-gray-200'
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 ${
+                      fieldErrors.tanggal_berakhir
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                     }`}
                   />
                   {fieldErrors.tanggal_berakhir && (
-                    <p className="text-[11px] text-[#BF3E0F] mt-1">{fieldErrors.tanggal_berakhir[0]}</p>
+                    <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.tanggal_berakhir[0]}</p>
                   )}
                 </div>
               </div>
@@ -1016,10 +1060,10 @@ export default function KontrakPage({ onSessionExpired }) {
                     placeholder={calculatedDuration ? `Otomatis: ${calculatedDuration}` : 'Misal: 12 Bulan atau 360 Hari'}
                     value={formData.durasi}
                     onChange={(e) => setFormData({ ...formData, durasi: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05D24]"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                   />
                   {calculatedDuration && !formData.durasi && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-orange-800 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-[#176B7A] bg-[#176B7A]/10 px-2 py-0.5 rounded-md border border-[#176B7A]/20">
                       Auto: {calculatedDuration}
                     </span>
                   )}
@@ -1045,18 +1089,20 @@ export default function KontrakPage({ onSessionExpired }) {
                     placeholder="0"
                     value={formData.biaya_sewa}
                     onChange={(e) => setFormData({ ...formData, biaya_sewa: e.target.value })}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05D24] ${
-                      fieldErrors.biaya_sewa ? 'border-[#F05D24] bg-orange-50/40' : 'border-gray-200'
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 ${
+                      fieldErrors.biaya_sewa
+                        ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
+                        : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                     }`}
                   />
                 </div>
                 {formData.biaya_sewa && !isNaN(Number(formData.biaya_sewa)) && (
-                  <p className="text-[11px] text-[#F05D24] font-semibold mt-1">
+                  <p className="text-[11px] text-[#176B7A] font-semibold mt-1">
                     Terbaca: {formatRupiah(formData.biaya_sewa)} / bulan
                   </p>
                 )}
                 {fieldErrors.biaya_sewa && (
-                  <p className="text-[11px] text-[#BF3E0F] mt-1">{fieldErrors.biaya_sewa[0]}</p>
+                  <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.biaya_sewa[0]}</p>
                 )}
               </div>
 
@@ -1070,7 +1116,7 @@ export default function KontrakPage({ onSessionExpired }) {
                   placeholder="Catatan tambahan seperti klausul sewa beli, nomor SPK, atau PIC vendor..."
                   value={formData.keterangan}
                   onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05D24]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
                 />
               </div>
 
@@ -1087,7 +1133,7 @@ export default function KontrakPage({ onSessionExpired }) {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#F05D24] to-[#d84a15] hover:from-[#d84a15] hover:to-[#bf3e0f] text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#F15A24] hover:bg-[#d84a15] text-white font-bold text-xs shadow-xs transition-all disabled:opacity-50"
                 >
                   {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isEditMode ? 'Simpan Perubahan' : 'Tambah Kontrak'}</span>
@@ -1104,18 +1150,18 @@ export default function KontrakPage({ onSessionExpired }) {
       {showDeleteModal && deleteItem && (
         <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-orange-100 text-[#F05D24] flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
 
             <div className="text-center space-y-1.5">
               <h3 className="text-base font-extrabold text-gray-900">Konfirmasi Hapus Kontrak</h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[#6B7280]">
                 Apakah Anda yakin ingin menghapus kontrak <strong className="text-gray-900">{deleteItem.kode_kontrak}</strong> ({deleteItem.vendor})?
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-orange-50 border border-orange-200 text-orange-950 text-[11px] leading-relaxed">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 text-[11px] leading-relaxed">
               <span className="font-bold">Keamanan Data Aset:</span> Menghapus kontrak ini tidak akan menghapus data unit barang fisik. Seluruh aset inventaris yang sebelumnya terikat akan secara otomatis dialihkan statusnya menjadi aset mandiri (Milik Perusahaan).
             </div>
 
@@ -1132,7 +1178,7 @@ export default function KontrakPage({ onSessionExpired }) {
                 type="button"
                 disabled={deleting}
                 onClick={handleConfirmDelete}
-                className="flex-1 inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-[#F05D24] hover:bg-[#D84A15] text-white font-bold text-xs shadow-md transition-colors disabled:opacity-50"
+                className="flex-1 inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-colors disabled:opacity-50"
               >
                 {deleting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <span>Ya, Hapus Kontrak</span>

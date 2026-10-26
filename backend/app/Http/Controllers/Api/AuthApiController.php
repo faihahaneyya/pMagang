@@ -25,7 +25,7 @@ class AuthApiController extends Controller
 
     /**
      * Autentikasi admin menggunakan mekanisme sesi & cookie bawaan Laravel.
-     * Terlindungi oleh validasi CSRF bawaan Laravel.
+     * Terlindungi oleh validasi CSRF bawaan Laravel dan pembatasan akun resmi.
      */
     public function login(Request $request): JsonResponse
     {
@@ -33,6 +33,17 @@ class AuthApiController extends Controller
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
+
+        $email = strtolower(trim($credentials['email']));
+
+        // Batasan Keamanan Resmi PT BKL:
+        // Hanya dua akun resmi (IT dan Finance) yang diizinkan untuk login ke sistem.
+        if (!in_array($email, \App\Http\Middleware\EnsureOfficialAccount::ALLOWED_EMAILS, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun tidak diizinkan untuk mengakses sistem. Hanya akun IT dan Finance resmi PT Banyan Koalindo Lestari yang memiliki hak akses.',
+            ], 403);
+        }
 
         $remember = (bool) $request->boolean('remember', false);
 
@@ -50,6 +61,7 @@ class AuthApiController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'role' => $user->role ?? 'IT',
                 ],
             ]);
         }
@@ -62,12 +74,23 @@ class AuthApiController extends Controller
 
     /**
      * Mengembalikan profil pengguna yang sedang memiliki sesi aktif.
-     * Terlindungi oleh middleware 'auth'.
+     * Terlindungi oleh middleware 'auth' dan pembatasan akun resmi.
      */
     public function me(Request $request): JsonResponse
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
+
+        $email = strtolower(trim((string) $user->email));
+        if (!in_array($email, \App\Http\Middleware\EnsureOfficialAccount::ALLOWED_EMAILS, true)) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Sesi tidak valid untuk akun ini.',
+            ], 403);
+        }
 
         return response()->json([
             'success' => true,
@@ -75,6 +98,7 @@ class AuthApiController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role ?? 'IT',
             ],
         ]);
     }
