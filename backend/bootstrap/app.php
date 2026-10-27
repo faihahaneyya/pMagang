@@ -13,12 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request) {
-            // Request ke endpoint API tidak boleh di-redirect, selalu kembalikan 401 JSON
-            if ($request->is('api/*')) {
+            // Request ke endpoint API atau pemanggil yang meminta JSON tidak boleh di-redirect, selalu kembalikan 401 JSON
+            if ($request->is('api/*') || $request->expectsJson()) {
                 return null;
             }
 
-            // Fallback untuk rute web (Blade) jika membutuhkan autentikasi
+            // Fallback untuk rute web jika membutuhkan autentikasi
             return route('dashboard');
         });
     })
