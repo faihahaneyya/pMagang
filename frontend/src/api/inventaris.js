@@ -59,3 +59,14 @@ export const deleteInventaris = async (id) => {
   const response = await api.delete(`/inventaris/${id}`);
   return response.data;
 };
+
+/**
+ * Menghapus satu foto fisik spesifik dari suatu aset inventaris (IT only).
+ * Endpoint terlindungi: DELETE /api/inventaris/{id}/photos/{photoId}
+ * @param {string|number} id
+ * @param {string|number} photoId
+ */
+export const deleteInventarisPhoto = async (id, photoId) => {
+  const response = await api.delete(`/inventaris/${id}/photos/${photoId}`);
+  return response.data;
+};

@@ -71,6 +71,8 @@ class PublicScanApiController extends Controller
             'data' => [
                 'kode_inventaris' => $inventaris->kode_inventaris,
                 'nama_barang' => $inventaris->nama_barang,
+                'merek' => $inventaris->merek,
+                'model' => $inventaris->tipe_model,
                 'spesifikasi' => $inventaris->spesifikasi,
                 'lokasi' => $inventaris->lokasi,
                 'foto' => $mainFotoUrl,

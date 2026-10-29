@@ -286,6 +286,7 @@ class InventarisApiController extends Controller
     /**
      * DELETE /api/inventaris/{id}
      * Menghapus inventaris beserta file foto secara aman (dilindungi autentikasi).
+     * Dilarang jika inventaris masih terikat dalam kontrak sewa aktif.
      */
     public function destroy(string $id): JsonResponse
     {
@@ -296,6 +297,15 @@ class InventarisApiController extends Controller
                 'success' => false,
                 'message' => 'Data inventaris tidak ditemukan.',
             ], 404);
+        }
+
+        // Cek keterikatan kontrak (FK langsung kontrak_id maupun pivot contract_items)
+        $hasContract = $inventaris->kontrak_id !== null || \App\Models\ContractItem::where('inventaris_id', $inventaris->id)->exists();
+        if ($hasContract) {
+            return response()->json([
+                'success' => false,
+                'message' => "Inventaris '{$inventaris->nama_barang}' ({$inventaris->kode_inventaris}) tidak dapat dihapus karena masih terdaftar dalam kontrak aktif. Lepaskan hubungan barang dari kontrak terlebih dahulu.",
+            ], 422);
         }
 
         return DB::transaction(function () use ($inventaris) {
@@ -315,9 +325,58 @@ class InventarisApiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Inventaris berhasil dihapus.',
+                'message' => "Inventaris '{$inventaris->nama_barang}' berhasil dihapus.",
             ]);
         });
+    }
+
+    /**
+     * DELETE /api/inventaris/{id}/photos/{photoId}
+     * Menghapus satu foto fisik spesifik dari inventaris (IT only).
+     */
+    public function destroyPhoto(string $id, string $photoId): JsonResponse
+    {
+        $inventaris = $this->findInventaris($id);
+
+        if (!$inventaris) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data inventaris tidak ditemukan.',
+            ], 404);
+        }
+
+        // 1. Cek apakah photoId adalah ID dari tabel inventory_photos
+        $photo = InventoryPhoto::where('inventaris_id', $inventaris->id)
+            ->where('id', $photoId)
+            ->first();
+
+        if ($photo) {
+            if ($photo->foto_path) {
+                Storage::disk('public')->delete($photo->foto_path);
+            }
+            $photo->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Foto dokumentasi aset berhasil dihapus.',
+            ]);
+        }
+
+        // 2. Cek apakah ini foto utama pada kolom foto
+        if ($inventaris->foto && ($photoId === 'main' || $photoId == $inventaris->id)) {
+            Storage::disk('public')->delete($inventaris->foto);
+            $inventaris->update(['foto' => null]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Foto utama inventaris berhasil dihapus.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Foto inventaris tidak ditemukan.',
+        ], 404);
     }
 
     /**

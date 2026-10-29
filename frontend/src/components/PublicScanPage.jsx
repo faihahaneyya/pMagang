@@ -205,6 +205,11 @@ export default function PublicScanPage({ kode, onBackToHome, onOpenScanner }) {
                 <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-snug">
                   {data.nama_barang}
                 </h2>
+                {(data.merek || data.model) && (
+                  <p className="text-xs font-semibold text-[#176B7A] mt-1">
+                    {[data.merek, data.model].filter(Boolean).join(' • ')}
+                  </p>
+                )}
                 {data.spesifikasi && (
                   <p className="text-xs sm:text-sm text-[#6B7280] mt-2 whitespace-pre-line leading-relaxed bg-[#F8FAFC] p-3.5 rounded-2xl border border-gray-200/70">
                     {data.spesifikasi}

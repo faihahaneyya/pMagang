@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Carbon\Carbon;
 
 class Kontrak extends Model
@@ -25,6 +27,37 @@ class Kontrak extends Model
         'tanggal_berakhir' => 'date',
         'biaya_sewa' => 'decimal:2',
     ];
+
+    protected $appends = [
+        'status_kontrak',
+        'sisa_hari',
+        'sisa_kontrak',
+        'total_biaya',
+        'contract_id',
+        'contract_number',
+        'rental_cost',
+        'status',
+    ];
+
+    public function getContractIdAttribute(): int
+    {
+        return $this->id;
+    }
+
+    public function getContractNumberAttribute(): string
+    {
+        return $this->kode_kontrak;
+    }
+
+    public function getRentalCostAttribute(): float
+    {
+        return (float) $this->biaya_sewa;
+    }
+
+    public function getStatusAttribute(): string
+    {
+        return $this->status_kontrak;
+    }
 
     /**
      * Hitung status kontrak berdasarkan aturan bisnis:
@@ -123,13 +156,60 @@ class Kontrak extends Model
         return $this->getTotalBiayaAttribute();
     }
 
+    /**
+     * Relasi ke vendor (sesuai ERD: CONTRACTS FK ke VENDORS).
+     */
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
+
+    /**
+     * Relasi hasMany ke inventaris via FK langsung kontrak_id.
+     * Dipertahankan untuk kompatibilitas mundur dengan data lama.
+     */
     public function inventaris(): HasMany
     {
         return $this->hasMany(Inventaris::class, 'kontrak_id');
     }
 
+    /**
+     * Relasi many-to-many ke inventaris melalui tabel contract_items (sesuai ERD).
+     */
+    public function inventarisItems(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Inventaris::class,
+            'contract_items',
+            'contract_id',
+            'inventaris_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Daftar contract_items milik kontrak ini.
+     */
+    public function contractItems(): HasMany
+    {
+        return $this->hasMany(ContractItem::class, 'contract_id');
+    }
+
+    /**
+     * Jumlah inventaris yang terhubung ke kontrak ini (via contract_items).
+     */
     public function getJumlahInventarisAttribute(): int
     {
-        return $this->inventaris()->count();
+        return $this->inventarisItems()->count();
+    }
+
+    /**
+     * Nama vendor: ambil dari relasi vendor jika ada, fallback ke kolom string lama.
+     */
+    public function getNamaVendorAttribute(): string
+    {
+        if ($this->vendor_id && $this->vendor) {
+            return $this->vendor->name;
+        }
+        return $this->attributes['vendor'] ?? '-';
     }
 }

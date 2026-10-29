@@ -26,7 +26,12 @@ import {
   getKontrakDetail,
   createKontrak,
   updateKontrak,
-  deleteKontrak
+  deleteKontrak,
+  getVendorAll,
+  getContractItems,
+  addContractItem,
+  removeContractItem,
+  getInventarisList,
 } from '../api';
 
 const formatRupiah = (val) => {
@@ -53,7 +58,7 @@ const formatDate = (dateStr) => {
   }
 };
 
-export default function KontrakPage({ onSessionExpired, onDataChanged }) {
+export default function KontrakPage({ user, onSessionExpired, onDataChanged }) {
   // State Data & Paginasi
   const [kontrakList, setKontrakList] = useState([]);
   const [kpiData, setKpiData] = useState(null);
@@ -65,6 +70,20 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Vendor dropdown data
+  const [vendorList, setVendorList] = useState([]);
+  const [loadingVendors, setLoadingVendors] = useState(false);
+
+  // Contract Items state
+  const [contractItems, setContractItems] = useState([]);
+  const [showItemsModal, setShowItemsModal] = useState(false);
+  const [selectedKontrak, setSelectedKontrak] = useState(null);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [inventarisDropdown, setInventarisDropdown] = useState([]);
+  const [selectedInventarisId, setSelectedInventarisId] = useState('');
+  const [addingItem, setAddingItem] = useState(false);
+  const [removingItemId, setRemovingItemId] = useState(null);
 
   // State Filter & Pencarian
   const [searchTerm, setSearchTerm] = useState('');
@@ -92,9 +111,10 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Initial Form State
+  // Initial Form State — gunakan vendor_id (FK) bukan string vendor
   const initialForm = {
     kode_kontrak: '',
+    vendor_id: '',
     vendor: '',
     tanggal_mulai: '',
     tanggal_berakhir: '',
@@ -103,6 +123,27 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
     keterangan: '',
   };
   const [formData, setFormData] = useState(initialForm);
+
+  // Role helpers
+  const canWrite = user?.role === 'IT' || user?.role === 'KEUANGAN';
+  const canDelete = user?.role === 'IT' || user?.role === 'KEUANGAN';
+
+  // Load vendor dropdown saat komponen mount
+  const loadVendors = async () => {
+    setLoadingVendors(true);
+    try {
+      const res = await getVendorAll();
+      if (res?.data) setVendorList(res.data);
+    } catch (err) {
+      if (err.status === 401 && onSessionExpired) onSessionExpired();
+    } finally {
+      setLoadingVendors(false);
+    }
+  };
+
+  useEffect(() => {
+    loadVendors();
+  }, []);
 
   // Auto-dismiss alert after 4 seconds
   useEffect(() => {
@@ -204,6 +245,7 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
     setFieldErrors({});
     setFormData({
       kode_kontrak: item.kode_kontrak || '',
+      vendor_id: item.vendor_id ? String(item.vendor_id) : '',
       vendor: item.vendor || '',
       tanggal_mulai: item.tanggal_mulai || '',
       tanggal_berakhir: item.tanggal_berakhir || '',
@@ -253,6 +295,7 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
     try {
       const payload = {
         kode_kontrak: formData.kode_kontrak.trim().toUpperCase(),
+        vendor_id: formData.vendor_id ? Number(formData.vendor_id) : null,
         vendor: formData.vendor.trim(),
         tanggal_mulai: formData.tanggal_mulai,
         tanggal_berakhir: formData.tanggal_berakhir,
@@ -327,6 +370,63 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
       }
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // ===== CONTRACT ITEMS HANDLERS =====
+  const handleOpenItems = async (item) => {
+    setSelectedKontrak(item);
+    setShowItemsModal(true);
+    setContractItems([]);
+    setSelectedInventarisId('');
+    setLoadingItems(true);
+    try {
+      // Load contract items
+      const [itemsRes, invRes] = await Promise.all([
+        getContractItems(item.id),
+        getInventarisList({ per_page: 200 }),
+      ]);
+      if (itemsRes?.data) setContractItems(itemsRes.data);
+      if (invRes?.data) setInventarisDropdown(invRes.data);
+    } catch (err) {
+      if (err.status === 401 && onSessionExpired) onSessionExpired();
+      else setAlert({ type: 'error', message: err.message || 'Gagal memuat data barang kontrak.' });
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  const handleAddContractItem = async () => {
+    if (!selectedInventarisId || !selectedKontrak) return;
+    setAddingItem(true);
+    try {
+      await addContractItem(selectedKontrak.id, Number(selectedInventarisId));
+      setAlert({ type: 'success', message: 'Barang berhasil ditambahkan ke kontrak.' });
+      const res = await getContractItems(selectedKontrak.id);
+      if (res?.data) setContractItems(res.data);
+      setSelectedInventarisId('');
+      if (onDataChanged) onDataChanged();
+    } catch (err) {
+      if (err.status === 401 && onSessionExpired) onSessionExpired();
+      else setAlert({ type: 'error', message: err.message || 'Gagal menambahkan barang ke kontrak.' });
+    } finally {
+      setAddingItem(false);
+    }
+  };
+
+  const handleRemoveContractItem = async (itemId) => {
+    if (!selectedKontrak) return;
+    setRemovingItemId(itemId);
+    try {
+      await removeContractItem(selectedKontrak.id, itemId);
+      setAlert({ type: 'success', message: 'Barang berhasil dihapus dari kontrak.' });
+      setContractItems((prev) => prev.filter((ci) => ci.id !== itemId));
+      if (onDataChanged) onDataChanged();
+    } catch (err) {
+      if (err.status === 401 && onSessionExpired) onSessionExpired();
+      else setAlert({ type: 'error', message: err.message || 'Gagal menghapus barang dari kontrak.' });
+    } finally {
+      setRemovingItemId(null);
     }
   };
 
@@ -408,6 +508,7 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
           </a>
 
           {/* Tambah Kontrak Button */}
+          {canWrite && (
           <button
             type="button"
             id="btn-tambah-kontrak"
@@ -417,6 +518,7 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
             <Plus className="w-4 h-4" />
             <span>Tambah Kontrak</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -700,7 +802,18 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
                           <Eye className="w-4 h-4" />
                         </button>
 
+                        {/* Kelola Barang */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenItems(item)}
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#176B7A] hover:bg-[#176B7A]/10 transition-colors"
+                          title="Kelola Barang Terkait Kontrak"
+                        >
+                          <Boxes className="w-4 h-4" />
+                        </button>
+
                         {/* Edit */}
+                        {canWrite && (
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(item)}
@@ -709,8 +822,10 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
+                        )}
 
                         {/* Delete */}
+                        {canDelete && (
                         <button
                           type="button"
                           onClick={() => handleOpenDelete(item)}
@@ -719,6 +834,7 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -987,22 +1103,40 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
               {/* Vendor */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Nama Vendor / Penyedia <span className="text-[#F15A24]">*</span>
+                  Vendor / Penyedia <span className="text-[#F15A24]">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   required
-                  placeholder="Misal: PT United Tractors Tbk"
-                  value={formData.vendor}
-                  onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm focus:outline-none focus:ring-2 ${
-                    fieldErrors.vendor
+                  value={formData.vendor_id || ''}
+                  onChange={(e) => {
+                    const vId = e.target.value;
+                    const selected = vendorList.find((v) => String(v.vendor_id || v.id) === String(vId));
+                    setFormData({
+                      ...formData,
+                      vendor_id: vId,
+                      vendor: selected ? selected.name : ''
+                    });
+                  }}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 ${
+                    fieldErrors.vendor || fieldErrors.vendor_id
                       ? 'border-rose-300 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/20'
                       : 'border-gray-300 focus:border-[#176B7A] focus:ring-[#176B7A]/20'
                   }`}
-                />
-                {fieldErrors.vendor && (
-                  <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.vendor[0]}</p>
+                >
+                  <option value="">-- Pilih Vendor --</option>
+                  {vendorList.map((v) => (
+                    <option key={v.vendor_id || v.id} value={v.vendor_id || v.id}>
+                      {v.name} {v.phone ? `(${v.phone})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {loadingVendors && (
+                  <p className="text-[10px] text-gray-400 mt-1">Memuat data vendor...</p>
+                )}
+                {(fieldErrors.vendor || fieldErrors.vendor_id) && (
+                  <p className="text-[11px] text-rose-600 mt-1">
+                    {(fieldErrors.vendor && fieldErrors.vendor[0]) || (fieldErrors.vendor_id && fieldErrors.vendor_id[0])}
+                  </p>
                 )}
               </div>
 
@@ -1182,6 +1316,169 @@ export default function KontrakPage({ onSessionExpired, onDataChanged }) {
               >
                 {deleting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <span>Ya, Hapus Kontrak</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          10. CONTRACT ITEMS (BARANG DALAM KONTRAK) MODAL
+      ========================================================================== */}
+      {showItemsModal && selectedKontrak && (
+        <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 flex flex-col">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-[#F8FAFC] backdrop-blur-xs z-10">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono text-xs font-bold text-[#176B7A] bg-white px-2.5 py-1 rounded-lg border border-gray-200">
+                    {selectedKontrak.kode_kontrak}
+                  </span>
+                  <span className="text-xs text-gray-500 font-semibold">• {selectedKontrak.vendor}</span>
+                </div>
+                <h3 className="text-base font-extrabold text-gray-900 mt-1">
+                  Kelola Barang Terikat Kontrak (Contract Items)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowItemsModal(false)}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Add Item Section - Only for IT */}
+              {user?.role === 'IT' && (
+                <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-200 space-y-3">
+                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+                    Tambahkan Inventaris ke Kontrak
+                  </h4>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <select
+                      value={selectedInventarisId}
+                      onChange={(e) => setSelectedInventarisId(e.target.value)}
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm bg-white focus:outline-none focus:border-[#176B7A] focus:ring-2 focus:ring-[#176B7A]/20"
+                    >
+                      <option value="">-- Pilih Barang Inventaris --</option>
+                      {inventarisDropdown
+                        .filter(inv => !contractItems.some(ci => ci.inventaris_id === (inv.id || inv.inventory_id)))
+                        .map((inv) => (
+                          <option key={inv.id || inv.inventory_id} value={inv.id || inv.inventory_id}>
+                            {inv.kode_inventaris} - {inv.nama_barang} ({inv.merek || 'Tanpa Merek'})
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={!selectedInventarisId || addingItem}
+                      onClick={handleAddContractItem}
+                      className="px-4 py-2.5 rounded-xl bg-[#176B7A] hover:bg-[#0f4e5a] text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                    >
+                      {addingItem ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      <span>Hubungkan Barang</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Items Table */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+                    Daftar Barang Terhubung ({contractItems.length} Unit)
+                  </h4>
+                </div>
+
+                {loadingItems ? (
+                  <div className="py-8 text-center text-gray-500 text-xs">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#176B7A] mb-2" />
+                    Memuat barang kontrak...
+                  </div>
+                ) : contractItems.length === 0 ? (
+                  <div className="p-6 rounded-2xl bg-gray-50 border border-gray-200 text-center text-xs text-gray-500">
+                    Belum ada barang inventaris yang terhubung dengan kontrak ini.
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-gray-200 overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-[#6B7280] text-[10px] uppercase font-bold border-b border-gray-200">
+                        <tr>
+                          <th className="py-2.5 px-3">Kode Aset</th>
+                          <th className="py-2.5 px-3">Nama Barang</th>
+                          <th className="py-2.5 px-3">Merek / Model</th>
+                          <th className="py-2.5 px-3">Lokasi / PIC</th>
+                          <th className="py-2.5 px-3 text-center">Status</th>
+                          {user?.role === 'IT' && <th className="py-2.5 px-3 text-center">Aksi</th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {contractItems.map((ci) => {
+                          const item = ci.inventaris || {};
+                          return (
+                            <tr key={ci.id} className="hover:bg-gray-50/80">
+                              <td className="py-2.5 px-3 font-mono font-bold text-[#176B7A]">
+                                {item.kode_inventaris || '-'}
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-gray-900">
+                                {item.nama_barang || '-'}
+                              </td>
+                              <td className="py-2.5 px-3 text-gray-600">
+                                {item.merek || '-'} {item.tipe_model ? `(${item.tipe_model})` : ''}
+                              </td>
+                              <td className="py-2.5 px-3 text-gray-600">
+                                {item.lokasi || '-'} {item.pic ? `• ${item.pic}` : ''}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  item.status_aset === 'Ada'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}>
+                                  {item.status_aset || 'Ada'}
+                                </span>
+                              </td>
+                              {user?.role === 'IT' && (
+                                <td className="py-2.5 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    disabled={removingItemId === ci.id}
+                                    onClick={() => {
+                                      const itemLabel = (ci.nama_barang || item.nama_barang || 'Barang ini') + (ci.kode_inventaris || item.kode_inventaris ? ` (${ci.kode_inventaris || item.kode_inventaris})` : '');
+                                      if (window.confirm(`Apakah Anda yakin ingin melepas relasi ${itemLabel} dari kontrak ini?\n\nCatatan: Data fisik inventaris tidak akan dihapus, hanya keterikatan kontrak yang dilepas.`)) {
+                                        handleRemoveContractItem(ci.id);
+                                      }
+                                    }}
+                                    className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
+                                    title="Lepas Relasi Barang dari Kontrak"
+                                  >
+                                    {removingItemId === ci.id ? (
+                                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-200 flex justify-end bg-[#F8FAFC] rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => setShowItemsModal(false)}
+                className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs transition-colors"
+              >
+                Tutup
               </button>
             </div>
           </div>

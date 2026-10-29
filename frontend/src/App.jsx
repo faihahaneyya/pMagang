@@ -6,6 +6,51 @@ import BarcodeScannerModal from './components/BarcodeScannerModal';
 import { getProfile, logout } from './api';
 import { RefreshCw } from 'lucide-react';
 
+function UserScanView({ user, onLogout, onOpenScanner }) {
+  return (
+    <div className="min-h-screen bg-[#F3F4F6] flex flex-col">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#176B7A] to-[#F15A24] flex items-center justify-center text-white font-extrabold text-sm shadow-xs">BKL</div>
+          <div>
+            <h1 className="font-extrabold text-gray-900 text-sm tracking-tight">PT BANYAN KOALINDO LESTARI</h1>
+            <p className="text-xs text-[#6B7280]">Sistem Inventaris — Akses Karyawan</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-bold text-gray-900">{user?.name}</p>
+            <p className="text-[11px] text-[#6B7280]">{user?.email}</p>
+          </div>
+          <button onClick={onLogout} className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#F05D24] hover:bg-orange-50 border border-orange-200/80 transition-colors">
+            <span>Keluar</span>
+          </button>
+        </div>
+      </header>
+      {/* Content */}
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-lg border border-gray-200 text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-[#F15A24]/10 flex items-center justify-center mx-auto">
+            <span className="text-3xl">📷</span>
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-gray-900">Pindai Barcode Inventaris</h2>
+            <p className="text-sm text-[#6B7280] mt-2">Gunakan kamera untuk memindai label QR Code pada perangkat inventaris perusahaan.</p>
+          </div>
+          <button
+            onClick={onOpenScanner}
+            className="w-full py-4 rounded-2xl bg-[#F15A24] hover:bg-[#D84A15] text-white font-bold text-base shadow-md transition-all"
+          >
+            Buka Kamera &amp; Pindai QR Code
+          </button>
+          <p className="text-xs text-[#6B7280]">Akun Anda ({user?.role}) hanya memiliki akses untuk memindai dan melihat detail inventaris.</p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 function getPublicScanKode() {
   const pathname = window.location.pathname;
   const match = pathname.match(/^\/(?:aset|scan)\/([^/?#]+)/i);
@@ -166,6 +211,24 @@ export default function App() {
 
   // 3. Proteksi Ketat: Dashboard HANYA ditampilkan jika currentUser diverifikasi melalui GET /api/me
   if (currentUser) {
+    // Role USER: hanya tampilkan halaman scan sederhana, bukan full Dashboard
+    if (currentUser.role === 'USER') {
+      return (
+        <>
+          <UserScanView
+            user={currentUser}
+            onLogout={handleLogout}
+            onOpenScanner={handleOpenScanner}
+          />
+          <BarcodeScannerModal
+            isOpen={showScanner}
+            onClose={handleCloseScanner}
+            onSelectAset={handleAsetScanned}
+          />
+        </>
+      );
+    }
+
     return (
       <>
         <Dashboard

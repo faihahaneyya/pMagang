@@ -310,11 +310,11 @@ export default function LoginPage({ onLoginSuccess, onOpenScanner }) {
                 type="button"
                 id="btn-login-pindai-barcode"
                 onClick={onOpenScanner}
-                className="w-full py-2.5 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#176B7A] font-semibold text-xs shadow-2xs transition-all duration-200 flex items-center justify-center space-x-2"
-                title="Pindai label QR Code inventaris menggunakan kamera"
+                className="w-full py-3 px-4 rounded-xl border border-[#176B7A]/30 bg-[#176B7A]/5 hover:bg-[#176B7A]/10 text-[#176B7A] font-bold text-xs shadow-2xs transition-all duration-200 flex items-center justify-center space-x-2"
+                title="Pindai label QR Code inventaris menggunakan kamera tanpa login"
               >
                 <Camera className="w-4 h-4 text-[#176B7A]" />
-                <span>Pindai QR Code (Kamera HP)</span>
+                <span>Pindai QR Code (Karyawan / Tanpa Login)</span>
               </button>
             </div>
 

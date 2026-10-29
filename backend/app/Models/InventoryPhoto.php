@@ -15,6 +15,34 @@ class InventoryPhoto extends Model
         'keterangan_foto',
     ];
 
+    protected $appends = [
+        'photo_id',
+        'file_name',
+        'file_path',
+        'description',
+        'url',
+    ];
+
+    public function getPhotoIdAttribute(): int
+    {
+        return $this->id;
+    }
+
+    public function getFileNameAttribute(): string
+    {
+        return basename($this->foto_path);
+    }
+
+    public function getFilePathAttribute(): string
+    {
+        return (string) $this->foto_path;
+    }
+
+    public function getDescriptionAttribute(): ?string
+    {
+        return $this->keterangan_foto;
+    }
+
     public function inventaris(): BelongsTo
     {
         return $this->belongsTo(Inventaris::class, 'inventaris_id');

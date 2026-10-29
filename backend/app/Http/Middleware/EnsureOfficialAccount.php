@@ -7,16 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware: Memastikan pengguna yang login adalah akun resmi dengan role IT atau KEUANGAN.
+ * Role USER diizinkan login tetapi TIDAK boleh mengakses endpoint admin ini.
+ */
 class EnsureOfficialAccount
 {
     /**
-     * Daftar akun resmi yang diizinkan mengakses seluruh menu internal sistem.
-     * IT dan Finance memiliki hak akses setara terhadap seluruh modul internal.
+     * Role yang diizinkan mengakses endpoint administrasi internal.
      */
-    public const ALLOWED_EMAILS = [
-        'it@banyankoalindo.co.id',
-        'finance@banyankoalindo.co.id',
-    ];
+    public const ADMIN_ROLES = ['IT', 'KEUANGAN'];
 
     /**
      * Handle an incoming request.
@@ -31,18 +31,13 @@ class EnsureOfficialAccount
             ], 401);
         }
 
-        $email = strtolower(trim((string) $user->email));
+        $userRole = strtoupper(trim((string) $user->role));
 
-        if (!in_array($email, self::ALLOWED_EMAILS, true)) {
-            // Cabut sesi akun yang tidak diizinkan
-            if ($request->hasSession()) {
-                Auth::guard('web')->logout();
-                $request->session()->invalidate();
-            }
-
+        if (!in_array($userRole, self::ADMIN_ROLES, true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak. Hanya akun IT dan Finance resmi PT Banyan Koalindo Lestari yang memiliki hak akses ke sistem internal.',
+                'message' => 'Akses ditolak. Halaman administrasi hanya dapat diakses oleh akun IT dan Keuangan.',
+                'redirect' => '/pindai',
             ], 403);
         }
 

@@ -35,6 +35,7 @@ import {
   createInventaris,
   updateInventaris,
   deleteInventaris,
+  deleteInventarisPhoto,
   getKontrakList
 } from '../api';
 
@@ -49,7 +50,10 @@ const KATEGORI_OPTIONS = [
 const STATUS_ASET_OPTIONS = ['Ada', 'Rusak', 'Hilang', 'Tidak Ditemukan'];
 const KONDISI_OPTIONS = ['Baik', 'Rusak Ringan', 'Rusak Berat'];
 
-export default function InventarisPage({ onSessionExpired, initialFilterStatusKontrak = '', onOpenScanner }) {
+export default function InventarisPage({ user, onSessionExpired, initialFilterStatusKontrak = '', onOpenScanner }) {
+  // Role permissions: Only IT can create/edit/delete inventaris; KEUANGAN has read-only access
+  const canWrite = user?.role === 'IT';
+
   // State Data & Paginasi
   const [inventaris, setInventaris] = useState([]);
   const [meta, setMeta] = useState({
@@ -425,6 +429,26 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
     }
   };
 
+  // Hapus satu foto fisik spesifik dari inventaris (IT only)
+  const handleDeletePhoto = async (inventarisId, photoId, caption) => {
+    const photoLabel = caption || 'foto ini';
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus ${photoLabel}? Tindakan ini akan menghapus berkas foto dari server.`)) {
+      return;
+    }
+    try {
+      await deleteInventarisPhoto(inventarisId, photoId);
+      setAlert({ type: 'success', message: 'Foto dokumentasi fisik berhasil dihapus.' });
+      const updatedDetail = await getInventarisDetail(inventarisId);
+      if (updatedDetail?.data) {
+        setDetailItem(updatedDetail.data);
+      }
+      loadInventaris(true);
+    } catch (err) {
+      if (err.status === 401 && onSessionExpired) onSessionExpired();
+      else setAlert({ type: 'error', message: err.message || 'Gagal menghapus foto dokumentasi.' });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 1. HEADER HALAMAN & ACTIONS */}
@@ -514,15 +538,17 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
             <span className="hidden xl:inline">Export Excel</span>
           </a>
 
-          <button
-            type="button"
-            id="btn-tambah-inventaris"
-            onClick={handleOpenCreate}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-[#F15A24] hover:bg-[#d84a15] text-white font-bold text-xs shadow-xs transition-all duration-200"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tambah Inventaris</span>
-          </button>
+          {canWrite && (
+            <button
+              type="button"
+              id="btn-tambah-inventaris"
+              onClick={handleOpenCreate}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-[#F15A24] hover:bg-[#d84a15] text-white font-bold text-xs shadow-xs transition-all duration-200"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tambah Inventaris</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -839,24 +865,28 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                         </a>
 
                         {/* Edit */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#F15A24] hover:bg-[#F15A24]/10 transition-colors"
-                          title="Ubah Data Inventaris"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
+                        {canWrite && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(item)}
+                            className="p-1.5 rounded-lg text-gray-600 hover:text-[#F15A24] hover:bg-[#F15A24]/10 transition-colors"
+                            title="Ubah Data Inventaris"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        )}
 
                         {/* Hapus */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDelete(item)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          title="Hapus Inventaris"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canWrite && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDelete(item)}
+                            className="p-1.5 rounded-lg text-gray-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Hapus Inventaris"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1111,8 +1141,18 @@ export default function InventarisPage({ onSessionExpired, initialFilterStatusKo
                           alt={p.caption || `Foto ${idx + 1}`}
                           className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-200"
                         />
-                        <div className="p-1.5 bg-white text-[10px] text-gray-600 truncate border-t border-gray-100">
-                          {p.caption || `Foto ${idx + 1}`}
+                        <div className="p-1.5 bg-white text-[10px] text-gray-600 border-t border-gray-100 flex items-center justify-between">
+                          <span className="truncate">{p.caption || `Foto ${idx + 1}`}</span>
+                          {canWrite && (p.id || detailItem.foto) && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePhoto(detailItem.id, p.id || 'main', p.caption || `Foto ${idx + 1}`)}
+                              className="p-1 text-gray-400 hover:text-rose-600 rounded transition-colors ml-1 flex-shrink-0"
+                              title="Hapus foto ini"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}

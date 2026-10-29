@@ -17,33 +17,23 @@ class AuthApiController extends Controller
     public function csrfCookie(Request $request): JsonResponse
     {
         return response()->json([
-            'success' => true,
-            'message' => 'CSRF cookie set successfully.',
+            'success'    => true,
+            'message'    => 'CSRF cookie set successfully.',
             'csrf_token' => csrf_token(),
         ]);
     }
 
     /**
-     * Autentikasi admin menggunakan mekanisme sesi & cookie bawaan Laravel.
-     * Terlindungi oleh validasi CSRF bawaan Laravel dan pembatasan akun resmi.
+     * Autentikasi pengguna menggunakan mekanisme sesi & cookie bawaan Laravel.
+     * Mendukung semua role: IT, KEUANGAN, USER.
+     * Mengembalikan hint redirect berdasarkan role untuk frontend.
      */
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'email'    => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
-
-        $email = strtolower(trim($credentials['email']));
-
-        // Batasan Keamanan Resmi PT BKL:
-        // Hanya dua akun resmi (IT dan Finance) yang diizinkan untuk login ke sistem.
-        if (!in_array($email, \App\Http\Middleware\EnsureOfficialAccount::ALLOWED_EMAILS, true)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akun tidak diizinkan untuk mengakses sistem. Hanya akun IT dan Finance resmi PT Banyan Koalindo Lestari yang memiliki hak akses.',
-            ], 403);
-        }
 
         $remember = (bool) $request->boolean('remember', false);
 
@@ -53,15 +43,23 @@ class AuthApiController extends Controller
 
             /** @var \App\Models\User $user */
             $user = Auth::guard('web')->user();
+            $role = strtoupper(trim((string) $user->role));
+
+            // Tentukan redirect hint berdasarkan role
+            $redirectTo = match ($role) {
+                'IT', 'KEUANGAN' => '/dashboard',
+                default          => '/pindai',
+            };
 
             return response()->json([
-                'success' => true,
-                'message' => 'Login berhasil.',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
+                'success'     => true,
+                'message'     => 'Login berhasil.',
+                'redirect_to' => $redirectTo,
+                'user'        => [
+                    'id'    => $user->id,
+                    'name'  => $user->name,
                     'email' => $user->email,
-                    'role' => $user->role ?? 'IT',
+                    'role'  => $role,
                 ],
             ]);
         }
@@ -74,31 +72,34 @@ class AuthApiController extends Controller
 
     /**
      * Mengembalikan profil pengguna yang sedang memiliki sesi aktif.
-     * Terlindungi oleh middleware 'auth' dan pembatasan akun resmi.
+     * Terlindungi oleh middleware 'auth'.
      */
     public function me(Request $request): JsonResponse
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $email = strtolower(trim((string) $user->email));
-        if (!in_array($email, \App\Http\Middleware\EnsureOfficialAccount::ALLOWED_EMAILS, true)) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak. Sesi tidak valid untuk akun ini.',
-            ], 403);
+                'message' => 'Unauthenticated.',
+            ], 401);
         }
 
+        $role = strtoupper(trim((string) $user->role));
+        $redirectTo = match ($role) {
+            'IT', 'KEUANGAN' => '/dashboard',
+            default          => '/pindai',
+        };
+
         return response()->json([
-            'success' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
+            'success'     => true,
+            'redirect_to' => $redirectTo,
+            'user'        => [
+                'id'    => $user->id,
+                'name'  => $user->name,
                 'email' => $user->email,
-                'role' => $user->role ?? 'IT',
+                'role'  => $role,
             ],
         ]);
     }

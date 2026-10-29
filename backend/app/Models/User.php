@@ -39,11 +39,28 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    protected $appends = [
+        'user_id',
+        'username',
+    ];
+
+    public function getUserIdAttribute(): int
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->id;
+    }
+
+    public function getUsernameAttribute(): string
+    {
+        return $this->name;
+    }
+
+    public function getPasswordHashAttribute(): string
+    {
+        return $this->password;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Inventaris extends Model
 {
@@ -32,6 +33,63 @@ class Inventaris extends Model
         'status_aset' => 'string',
     ];
 
+    protected $appends = [
+        'inventory_id',
+        'inventory_code',
+        'name',
+        'brand',
+        'model',
+        'serial_number',
+        'specifications',
+        'location',
+        'pic_name',
+    ];
+
+    public function getInventoryIdAttribute(): int
+    {
+        return $this->id;
+    }
+
+    public function getInventoryCodeAttribute(): string
+    {
+        return (string) $this->kode_inventaris;
+    }
+
+    public function getNameAttribute(): string
+    {
+        return (string) $this->nama_barang;
+    }
+
+    public function getBrandAttribute(): ?string
+    {
+        return $this->merek;
+    }
+
+    public function getModelAttribute(): ?string
+    {
+        return $this->tipe_model;
+    }
+
+    public function getSerialNumberAttribute(): ?string
+    {
+        return $this->nomor_seri;
+    }
+
+    public function getSpecificationsAttribute(): ?string
+    {
+        return $this->spesifikasi;
+    }
+
+    public function getLocationAttribute(): ?string
+    {
+        return $this->lokasi;
+    }
+
+    public function getPicNameAttribute(): ?string
+    {
+        return $this->pic;
+    }
+
     public function kontrak(): BelongsTo
     {
         return $this->belongsTo(Kontrak::class, 'kontrak_id');
@@ -40,6 +98,28 @@ class Inventaris extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(InventoryPhoto::class, 'inventaris_id');
+    }
+
+    /**
+     * Relasi many-to-many ke kontrak melalui tabel contract_items (sesuai ERD).
+     * Satu inventaris dapat muncul di beberapa kontrak.
+     */
+    public function kontraks(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Kontrak::class,
+            'contract_items',
+            'inventaris_id',
+            'contract_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Relasi ke contract_items.
+     */
+    public function contractItems(): HasMany
+    {
+        return $this->hasMany(ContractItem::class, 'inventaris_id');
     }
 
     /**

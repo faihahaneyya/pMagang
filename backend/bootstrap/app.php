@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             // Fallback untuk rute web jika membutuhkan autentikasi
             return route('dashboard');
         });
+
+        // Register middleware alias
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request, \Throwable $e) {
