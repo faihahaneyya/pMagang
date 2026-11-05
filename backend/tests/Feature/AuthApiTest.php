@@ -157,7 +157,7 @@ class AuthApiTest extends TestCase
                 'id' => $finance->id,
                 'name' => $finance->name,
                 'email' => 'finance@banyankoalindo.co.id',
-                'role' => 'Finance',
+                'role' => 'KEUANGAN',
             ],
         ]);
 
@@ -165,14 +165,14 @@ class AuthApiTest extends TestCase
     }
 
     /**
-     * Uji 4C: POST /api/login ditolak untuk akun di luar IT dan Finance (403 Forbidden).
+     * Uji 4C: Akun di luar IT dan Keuangan (USER / Guest) setelah login diarahkan ke /pindai dan ditolak akses admin.
      */
     public function test_login_with_unauthorized_account_is_rejected(): void
     {
         $unauthorized = User::create([
             'name' => 'Pengguna Lain',
-            'email' => 'unauthorized@example.com',
-            'role' => 'Guest',
+            'email' => 'unauthorized_login@example.com',
+            'role' => 'USER',
             'password' => Hash::make('password123'),
         ]);
 
@@ -181,12 +181,16 @@ class AuthApiTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(403);
+        // Akun non-admin diizinkan login tetapi diarahkan ke scan publik (/pindai)
+        $response->assertStatus(200);
         $response->assertJson([
-            'success' => false,
-            'message' => 'Akun tidak diizinkan untuk mengakses sistem. Hanya akun IT dan Finance resmi PT Banyan Koalindo Lestari yang memiliki hak akses.',
+            'success' => true,
+            'redirect_to' => '/pindai',
         ]);
-        $this->assertGuest();
+
+        // Dan saat mengakses halaman internal admin, ditolak 403 Forbidden
+        $adminRes = $this->actingAs($unauthorized, 'web')->getJson('/api/inventaris');
+        $adminRes->assertStatus(403);
     }
 
     /**
@@ -359,7 +363,7 @@ class AuthApiTest extends TestCase
         $response->assertStatus(403);
         $response->assertJson([
             'success' => false,
-            'message' => 'Akses ditolak. Hanya akun IT dan Finance resmi PT Banyan Koalindo Lestari yang memiliki hak akses ke sistem internal.',
+            'message' => 'Akses ditolak. Halaman administrasi hanya dapat diakses oleh akun IT dan Keuangan.',
         ]);
     }
 

@@ -211,6 +211,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
     return {
       totalInv,
       totalKon,
+      totalVendor: dashboardStats?.total_vendor ?? 0,
       kontrakAktif,
       kontrakAkanBerakhir,
       kontrakBerakhir,
@@ -691,6 +692,7 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
             ) : activeMenu === 'laporan' ? (
               <ErrorBoundary title="Terjadi Kendala pada Halaman Laporan">
                 <LaporanPage
+                  user={user}
                   onSessionExpired={onSessionExpired || onLogout}
                 />
               </ErrorBoundary>
@@ -735,13 +737,21 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                         <Building2 className="w-3.5 h-3.5" />
                         <span>PT Banyan Koalindo Lestari</span>
                         <span>•</span>
-                        <span>Sistem Informasi Inventaris Sewa Beli</span>
+                        <span>
+                          {user?.role === 'KEUANGAN'
+                            ? 'Role Keuangan • Administrasi Finansial & Kontrak'
+                            : 'Role IT • Pengelolaan Operasional Inventaris'}
+                        </span>
                       </div>
                       <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">
-                        Ringkasan Operasional Inventaris & Kontrak
+                        {user?.role === 'KEUANGAN'
+                          ? 'Ringkasan Finansial, Kontrak Sewa & Rekanan Vendor'
+                          : 'Ringkasan Operasional & Pemeliharaan Inventaris'}
                       </h3>
                       <p className="text-xs sm:text-sm text-[#6B7280] leading-relaxed">
-                        Pantau ketersediaan aset operasional, masa berlaku kontrak sewa beli, estimasi jatuh tempo, dan rincian komitmen finansial secara akurat.
+                        {user?.role === 'KEUANGAN'
+                          ? 'Pantau data rekanan vendor, evaluasi nilai kontrak sewa beli, estimasi jatuh tempo pembayaran, serta monitor aset terikat kontrak secara akurat.'
+                          : 'Pantau registrasi fisik aset, kondisi unit di lapangan, pencetakan label QR, serta keterikatan barang dengan kontrak sewa beli.'}
                       </p>
                     </div>
 
@@ -755,141 +765,262 @@ export default function Dashboard({ user, onLogout, onSessionExpired, activeMenu
                   </div>
                 </div>
 
-                {/* 4 SUMMARY METRIC CARDS — INTERAKTIF & DIHITUNG DINAMIS DARI DATA KONTRAK MYSQL */}
+                {/* 4 SUMMARY METRIC CARDS — INTERAKTIF & DIHITUNG DINAMIS SESUAI ROLE */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Card 1: Total Dokumen */}
-                  <button
-                    type="button"
-                    id="card-total-dokumen"
-                    onClick={() => handleCardClick('semua')}
-                    className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${selectedCardFilter === 'semua'
-                        ? 'border-[#176B7A] ring-2 ring-[#176B7A]/20 bg-[#176B7A]/5'
-                        : 'border-gray-200/80 hover:border-gray-300'
-                      }`}
-                    title="Klik untuk menampilkan seluruh unit inventaris terdaftar"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#6B7280]">Total Dokumen</span>
-                      <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      {loading ? (
-                        <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
-                      ) : (
-                        <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                          {stats.totalKon} <span className="text-xs font-semibold text-[#6B7280]">Dokumen</span>
+                  {user?.role === 'KEUANGAN' ? (
+                    <>
+                      {/* Keuangan Card 1: Total Rekanan Vendor */}
+                      <button
+                        type="button"
+                        id="card-keuangan-vendor"
+                        onClick={() => handleMenuClick('vendor', 'Vendor')}
+                        className="bg-white rounded-2xl p-5 border border-gray-200/80 hover:border-[#176B7A] text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer"
+                        title="Klik untuk melihat manajemen data rekanan vendor"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Rekanan Vendor</span>
+                          <div className="w-10 h-10 rounded-xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center">
+                            <Building2 className="w-5 h-5" />
+                          </div>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                      <span>Total Unit Terdaftar</span>
-                      <span>•</span>
-                      <span className="font-semibold text-gray-800">{stats.totalInv} Aset</span>
-                    </div>
-                  </button>
-
-                  {/* Card 2: Kontrak Aktif */}
-                  <button
-                    type="button"
-                    id="card-kontrak-aktif"
-                    onClick={() => handleCardClick('sewa_aktif')}
-                    className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${selectedCardFilter === 'sewa_aktif'
-                        ? 'border-[#176B7A] ring-2 ring-[#176B7A]/20 bg-[#176B7A]/5'
-                        : 'border-gray-200/80 hover:border-gray-300'
-                      }`}
-                    title="Klik untuk memfilter unit sewa dengan kontrak aktif"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#6B7280]">Kontrak Aktif</span>
-                      <div className="w-10 h-10 rounded-xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      {loading ? (
-                        <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
-                      ) : (
-                        <div className="text-2xl sm:text-3xl font-extrabold text-[#176B7A] tracking-tight">
-                          {stats.kontrakAktif} <span className="text-xs font-semibold text-[#6B7280]">Aktif</span>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                              {stats.totalVendor} <span className="text-xs font-semibold text-[#6B7280]">Mitra</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                      <span>Masa sewa berjalan</span>
-                      <span className="font-semibold text-[#176B7A]">&gt; 30 Hari</span>
-                    </div>
-                  </button>
-
-                  {/* Card 3: Akan Berakhir */}
-                  <button
-                    type="button"
-                    id="card-akan-berakhir"
-                    onClick={() => handleCardClick('akan_berakhir')}
-                    className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${selectedCardFilter === 'akan_berakhir'
-                        ? 'border-[#F15A24] ring-2 ring-[#F15A24]/20 bg-[#F15A24]/5'
-                        : 'border-gray-200/80 hover:border-gray-300'
-                      }`}
-                    title="Klik untuk memfilter unit dengan sisa kontrak 1-30 hari"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#6B7280]">Akan Berakhir</span>
-                      <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#F15A24] flex items-center justify-center">
-                        <AlertTriangle className="w-5 h-5" />
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      {loading ? (
-                        <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
-                      ) : (
-                        <div className="text-2xl sm:text-3xl font-extrabold text-[#F15A24] tracking-tight">
-                          {stats.kontrakAkanBerakhir} <span className="text-xs font-semibold text-[#6B7280]">Kontrak</span>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>Vendor rekanan aktif</span>
+                          <span className="font-semibold text-[#176B7A]">Kelola &rarr;</span>
                         </div>
-                      )}
-                    </div>
+                      </button>
 
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                      <span>1–30 Hari Jatuh Tempo</span>
-                      <span className="font-semibold text-[#F15A24]">Perlu Perhatian</span>
-                    </div>
-                  </button>
-
-                  {/* Card 4: Akumulasi Komitmen */}
-                  <button
-                    type="button"
-                    id="card-akumulasi-komitmen"
-                    onClick={() => handleMenuClick('kontrak', 'Kontrak')}
-                    className="bg-white rounded-2xl p-5 border border-gray-200/80 hover:border-gray-300 text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer"
-                    title="Klik untuk melihat rincian manajemen kontrak sewa beli"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#6B7280]">Akumulasi Komitmen</span>
-                      <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
-                        <DollarSign className="w-5 h-5" />
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      {loading ? (
-                        <div className="h-8 w-28 bg-gray-200 rounded-lg animate-pulse" />
-                      ) : (
-                        <div className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight truncate">
-                          {formatRupiah(stats.totalBiaya)}
+                      {/* Keuangan Card 2: Total Dokumen Kontrak */}
+                      <button
+                        type="button"
+                        id="card-keuangan-kontrak"
+                        onClick={() => handleMenuClick('kontrak', 'Kontrak')}
+                        className="bg-white rounded-2xl p-5 border border-gray-200/80 hover:border-[#176B7A] text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer"
+                        title="Klik untuk melihat seluruh dokumen kontrak sewa beli"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Total Kontrak</span>
+                          <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
+                            <FileText className="w-5 h-5" />
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                              {stats.totalKon} <span className="text-xs font-semibold text-[#6B7280]">Dokumen</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>Arsip kontrak sewa beli</span>
+                          <span className="font-semibold text-[#176B7A]">Buka Data &rarr;</span>
+                        </div>
+                      </button>
 
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
-                      <span>Estimasi nilai total</span>
-                      <span className="font-semibold text-[#176B7A]">Buka Kontrak &rarr;</span>
-                    </div>
-                  </button>
+                      {/* Keuangan Card 3: Masa Kontrak & Jatuh Tempo */}
+                      <button
+                        type="button"
+                        id="card-keuangan-jatuh-tempo"
+                        onClick={() => handleCardClick('akan_berakhir')}
+                        className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
+                          selectedCardFilter === 'akan_berakhir'
+                            ? 'border-[#F15A24] ring-2 ring-[#F15A24]/20 bg-[#F15A24]/5'
+                            : 'border-gray-200/80 hover:border-gray-300'
+                        }`}
+                        title="Klik untuk memfilter kontrak yang mendekati jatuh tempo"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Akan Jatuh Tempo</span>
+                          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#F15A24] flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-2xl sm:text-3xl font-extrabold text-[#F15A24] tracking-tight">
+                              {stats.kontrakAkanBerakhir} <span className="text-xs font-semibold text-[#6B7280]">Kontrak</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>1–30 Hari Sisa Tempo</span>
+                          <span className="font-semibold text-[#F15A24]">Perlu Evaluasi</span>
+                        </div>
+                      </button>
+
+                      {/* Keuangan Card 4: Akumulasi Nilai Komitmen Finansial */}
+                      <button
+                        type="button"
+                        id="card-keuangan-komitmen"
+                        onClick={() => handleMenuClick('kontrak', 'Kontrak')}
+                        className="bg-white rounded-2xl p-5 border border-gray-200/80 hover:border-[#176B7A] text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer"
+                        title="Klik untuk melihat rincian finansial kontrak"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Komitmen Finansial</span>
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                            <DollarSign className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-28 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight truncate">
+                              {formatRupiah(stats.totalBiaya)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>Total nilai sewa kontrak</span>
+                          <span className="font-semibold text-emerald-700">Rincian Finansial &rarr;</span>
+                        </div>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {/* IT Card 1: Total Unit Inventaris */}
+                      <button
+                        type="button"
+                        id="card-total-dokumen"
+                        onClick={() => handleCardClick('semua')}
+                        className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
+                          selectedCardFilter === 'semua'
+                            ? 'border-[#176B7A] ring-2 ring-[#176B7A]/20 bg-[#176B7A]/5'
+                            : 'border-gray-200/80 hover:border-gray-300'
+                        }`}
+                        title="Klik untuk menampilkan seluruh unit inventaris terdaftar"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Total Inventaris</span>
+                          <div className="w-10 h-10 rounded-xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center">
+                            <Boxes className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                              {stats.totalInv} <span className="text-xs font-semibold text-[#6B7280]">Unit</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>Terdaftar di database</span>
+                          <span>•</span>
+                          <span className="font-semibold text-gray-800">{stats.totalKon} Kontrak</span>
+                        </div>
+                      </button>
+
+                      {/* IT Card 2: Kontrak Aktif */}
+                      <button
+                        type="button"
+                        id="card-kontrak-aktif"
+                        onClick={() => handleCardClick('sewa_aktif')}
+                        className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
+                          selectedCardFilter === 'sewa_aktif'
+                            ? 'border-[#176B7A] ring-2 ring-[#176B7A]/20 bg-[#176B7A]/5'
+                            : 'border-gray-200/80 hover:border-gray-300'
+                        }`}
+                        title="Klik untuk memfilter unit sewa dengan kontrak aktif"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Kontrak Aktif</span>
+                          <div className="w-10 h-10 rounded-xl bg-[#176B7A]/10 text-[#176B7A] flex items-center justify-center">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-2xl sm:text-3xl font-extrabold text-[#176B7A] tracking-tight">
+                              {stats.kontrakAktif} <span className="text-xs font-semibold text-[#6B7280]">Aktif</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>Masa sewa berjalan</span>
+                          <span className="font-semibold text-[#176B7A]">&gt; 30 Hari</span>
+                        </div>
+                      </button>
+
+                      {/* IT Card 3: Akan Berakhir */}
+                      <button
+                        type="button"
+                        id="card-akan-berakhir"
+                        onClick={() => handleCardClick('akan_berakhir')}
+                        className={`bg-white rounded-2xl p-5 border text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer ${
+                          selectedCardFilter === 'akan_berakhir'
+                            ? 'border-[#F15A24] ring-2 ring-[#F15A24]/20 bg-[#F15A24]/5'
+                            : 'border-gray-200/80 hover:border-gray-300'
+                        }`}
+                        title="Klik untuk memfilter unit dengan sisa kontrak 1-30 hari"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Akan Berakhir</span>
+                          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#F15A24] flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-2xl sm:text-3xl font-extrabold text-[#F15A24] tracking-tight">
+                              {stats.kontrakAkanBerakhir} <span className="text-xs font-semibold text-[#6B7280]">Kontrak</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>1–30 Hari Jatuh Tempo</span>
+                          <span className="font-semibold text-[#F15A24]">Perlu Perhatian</span>
+                        </div>
+                      </button>
+
+                      {/* IT Card 4: Rekanan Vendor */}
+                      <button
+                        type="button"
+                        id="card-it-vendor"
+                        onClick={() => handleMenuClick('vendor', 'Vendor')}
+                        className="bg-white rounded-2xl p-5 border border-gray-200/80 hover:border-gray-300 text-left shadow-xs hover:shadow-md transition-all relative overflow-hidden cursor-pointer"
+                        title="Klik untuk melihat data vendor penyedia aset"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#6B7280]">Rekanan Vendor</span>
+                          <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
+                            <Building2 className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          {loading ? (
+                            <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : (
+                            <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                              {stats.totalVendor} <span className="text-xs font-semibold text-[#6B7280]">Mitra</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-[#6B7280]">
+                          <span>Mitra penyedia aset</span>
+                          <span className="font-semibold text-[#176B7A]">Data Vendor &rarr;</span>
+                        </div>
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* SECONDARY ROW: KONDISI FISIK ASET & INFORMASI KEUANGAN KONTRAK */}

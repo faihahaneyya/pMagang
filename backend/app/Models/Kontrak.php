@@ -14,6 +14,7 @@ class Kontrak extends Model
 
     protected $fillable = [
         'kode_kontrak',
+        'vendor_id',
         'vendor',
         'tanggal_mulai',
         'tanggal_berakhir',

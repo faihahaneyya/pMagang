@@ -94,13 +94,10 @@ Route::middleware('web')->group(function () {
                 Route::match(['put', 'patch'], '/{id}', [KontrakApiController::class, 'update'])->name('update');
                 Route::delete('/{id}', [KontrakApiController::class, 'destroy'])->name('destroy');
 
-                // Contract Items (relasi kontrak-inventaris)
+                // Contract Items (relasi kontrak-inventaris: IT + KEUANGAN)
                 Route::get('/{id}/items', [ContractItemApiController::class, 'index'])->name('items.index');
-                // Manage items: IT only
-                Route::middleware(\App\Http\Middleware\RoleMiddleware::class . ':IT')->group(function () {
-                    Route::post('/{id}/items', [ContractItemApiController::class, 'store'])->name('items.store');
-                    Route::delete('/{id}/items/{itemId}', [ContractItemApiController::class, 'destroy'])->name('items.destroy');
-                });
+                Route::post('/{id}/items', [ContractItemApiController::class, 'store'])->name('items.store');
+                Route::delete('/{id}/items/{itemId}', [ContractItemApiController::class, 'destroy'])->name('items.destroy');
             });
 
             // Barcode PNG Download

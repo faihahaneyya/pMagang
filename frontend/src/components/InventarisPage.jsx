@@ -483,17 +483,20 @@ export default function InventarisPage({ user, onSessionExpired, initialFilterSt
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#176B7A]' : ''}`} />
           </button>
 
-          <a
-            href={`/admin/barcode/print-all?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            id="btn-print-all-barcode"
-            className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-2xs transition-colors"
-            title="Cetak Semua Label QR Code"
-          >
-            <Printer className="w-4 h-4 text-[#176B7A]" />
-            <span className="hidden md:inline">Cetak Semua QR Code</span>
-          </a>
+          {/* Tombol Cetak Semua QR Code hanya untuk IT */}
+          {canWrite && (
+            <a
+              href={`/admin/barcode/print-all?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              id="btn-print-all-barcode"
+              className="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs shadow-2xs transition-colors"
+              title="Cetak Semua Label QR Code"
+            >
+              <Printer className="w-4 h-4 text-[#176B7A]" />
+              <span className="hidden md:inline">Cetak Semua QR Code</span>
+            </a>
+          )}
 
           {onOpenScanner && (
             <button
@@ -853,16 +856,18 @@ export default function InventarisPage({ user, onSessionExpired, initialFilterSt
                           <Download className="w-4 h-4" />
                         </a>
 
-                        {/* Cetak QR Code */}
-                        <a
-                          href={`/admin/barcode/${encodeURIComponent(item.kode_inventaris)}/print?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#176B7A] hover:bg-[#176B7A]/10 transition-colors"
-                          title="Cetak Label QR Code"
-                        >
-                          <Printer className="w-4 h-4" />
-                        </a>
+                        {/* Cetak Label QR Code - Khusus IT */}
+                        {canWrite && (
+                          <a
+                            href={`/admin/barcode/${encodeURIComponent(item.kode_inventaris)}/print?frontend_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg text-gray-600 hover:text-[#176B7A] hover:bg-[#176B7A]/10 transition-colors"
+                            title="Cetak Label QR Code"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </a>
+                        )}
 
                         {/* Edit */}
                         {canWrite && (

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { scanInventaris } from '../api/scan';
 
-export default function PublicScanPage({ kode, onBackToHome, onOpenScanner }) {
+export default function PublicScanPage({ kode, user, onBackToHome, onOpenScanner }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState(null);
@@ -189,6 +189,52 @@ export default function PublicScanPage({ kode, onBackToHome, onOpenScanner }) {
         {/* SUCCESS DATA DISPLAY */}
         {!loading && !errorStatus && data && (
           <div className="space-y-5 animate-fadeIn">
+            {/* ROLE CONTEXT BANNER */}
+            {user?.role === 'IT' ? (
+              <div className="bg-[#176B7A]/10 border border-[#176B7A]/20 text-[#176B7A] p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-[#176B7A] flex-shrink-0" />
+                  <span>
+                    Masuk sebagai: <strong>IT (Akses Administratif)</strong> • Data teknis lengkap & label QR dapat dikelola di Dashboard.
+                  </span>
+                </div>
+                {onBackToHome && (
+                  <button
+                    type="button"
+                    onClick={onBackToHome}
+                    className="font-bold underline text-[#176B7A] hover:text-[#0f4e5a] text-left sm:text-right"
+                  >
+                    Buka Dashboard IT &rarr;
+                  </button>
+                )}
+              </div>
+            ) : user?.role === 'KEUANGAN' ? (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>
+                    Masuk sebagai: <strong>KEUANGAN</strong> • Memantau kesesuaian unit inventaris dengan data kontrak sewa beli.
+                  </span>
+                </div>
+                {onBackToHome && (
+                  <button
+                    type="button"
+                    onClick={onBackToHome}
+                    className="font-bold underline text-emerald-800 hover:text-emerald-950 text-left sm:text-right"
+                  >
+                    Buka Dashboard Keuangan &rarr;
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 text-[#6B7280] p-3.5 rounded-2xl flex items-center space-x-2 text-xs">
+                <ShieldCheck className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <span>
+                  <strong>Akses Karyawan / Publik (Tanpa Login)</strong>: Menampilkan data fisik aset resmi. Informasi biaya sewa &amp; vendor internal dilindungi.
+                </span>
+              </div>
+            )}
+
             {/* CARD 1: IDENTITAS ASET */}
             <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-xs space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">

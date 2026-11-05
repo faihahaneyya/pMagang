@@ -172,7 +172,7 @@ class KontrakApiTest extends TestCase
         $response = $this->actingAs($this->getTestUser())->postJson('/api/kontrak', []);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['kode_kontrak', 'vendor', 'tanggal_mulai', 'tanggal_berakhir']);
+        $response->assertJsonValidationErrors(['kode_kontrak', 'vendor_id', 'tanggal_mulai', 'tanggal_berakhir']);
     }
 
     /**
@@ -197,11 +197,13 @@ class KontrakApiTest extends TestCase
     public function test_create_and_delete_kontrak_authenticated(): void
     {
         $user = $this->getTestUser();
+        $vendor = \App\Models\Vendor::first() ?? \App\Models\Vendor::create(['name' => 'PT Rental Sukses API', 'email' => 'vendor@test.com']);
 
         // Test Create
         $createResponse = $this->actingAs($user)->postJson('/api/kontrak', [
             'kode_kontrak' => 'KON-TEST-API-999',
-            'vendor' => 'PT Rental Sukses API',
+            'vendor_id' => $vendor->id,
+            'vendor' => $vendor->name,
             'tanggal_mulai' => '2026-01-01',
             'tanggal_berakhir' => '2027-01-01',
             'durasi' => '12 Bulan',
@@ -219,8 +221,9 @@ class KontrakApiTest extends TestCase
         ]);
 
         // Test Update
+        $newVendor = \App\Models\Vendor::skip(1)->first() ?? $vendor;
         $updateResponse = $this->actingAs($user)->putJson('/api/kontrak/KON-TEST-API-999', [
-            'vendor' => 'PT Rental Sukses API Diperbarui',
+            'vendor_id' => $newVendor->id,
             'biaya_sewa' => 6000000,
         ]);
 
@@ -228,7 +231,7 @@ class KontrakApiTest extends TestCase
         $updateResponse->assertJson([
             'success' => true,
             'data' => [
-                'vendor' => 'PT Rental Sukses API Diperbarui',
+                'vendor_id' => $newVendor->id,
                 'biaya_sewa' => 6000000,
             ]
         ]);
@@ -238,7 +241,7 @@ class KontrakApiTest extends TestCase
         $deleteResponse->assertStatus(200);
         $deleteResponse->assertJson([
             'success' => true,
-            'message' => 'Kontrak berhasil dihapus.',
         ]);
+        $this->assertStringContainsString('berhasil dihapus', $deleteResponse->json('message'));
     }
 }

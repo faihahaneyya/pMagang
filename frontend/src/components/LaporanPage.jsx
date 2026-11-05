@@ -44,9 +44,9 @@ const formatDate = (dateStr) => {
   }
 };
 
-export default function LaporanPage({ onSessionExpired }) {
-  // Tab Laporan: 'inventaris' | 'kontrak' | 'ringkasan'
-  const [activeTab, setActiveTab] = useState('inventaris');
+export default function LaporanPage({ user, onSessionExpired }) {
+  // Tab Laporan: 'inventaris' | 'kontrak' | 'ringkasan' (Keuangan diprioritaskan pada kontrak & finansial)
+  const [activeTab, setActiveTab] = useState(() => (user?.role === 'KEUANGAN' ? 'kontrak' : 'inventaris'));
 
   // Data State
   const [loading, setLoading] = useState(true);

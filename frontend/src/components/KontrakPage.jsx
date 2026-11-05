@@ -1350,8 +1350,8 @@ export default function KontrakPage({ user, onSessionExpired, onDataChanged }) {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Add Item Section - Only for IT */}
-              {user?.role === 'IT' && (
+              {/* Add Item Section - IT & KEUANGAN */}
+              {canWrite && (
                 <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-200 space-y-3">
                   <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
                     Tambahkan Inventaris ke Kontrak
@@ -1411,7 +1411,7 @@ export default function KontrakPage({ user, onSessionExpired, onDataChanged }) {
                           <th className="py-2.5 px-3">Merek / Model</th>
                           <th className="py-2.5 px-3">Lokasi / PIC</th>
                           <th className="py-2.5 px-3 text-center">Status</th>
-                          {user?.role === 'IT' && <th className="py-2.5 px-3 text-center">Aksi</th>}
+                          {canWrite && <th className="py-2.5 px-3 text-center">Aksi</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -1440,7 +1440,7 @@ export default function KontrakPage({ user, onSessionExpired, onDataChanged }) {
                                   {item.status_aset || 'Ada'}
                                 </span>
                               </td>
-                              {user?.role === 'IT' && (
+                              {canWrite && (
                                 <td className="py-2.5 px-3 text-center">
                                   <button
                                     type="button"

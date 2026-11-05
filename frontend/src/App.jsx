@@ -169,6 +169,7 @@ export default function App() {
       <>
         <PublicScanPage
           kode={publicScanKode}
+          user={currentUser}
           onBackToHome={() => {
             window.history.pushState({}, '', '/');
             setPublicScanKode(null);

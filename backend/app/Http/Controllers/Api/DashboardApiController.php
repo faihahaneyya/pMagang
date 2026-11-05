@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Inventaris;
 use App\Models\Kontrak;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -27,6 +28,7 @@ class DashboardApiController extends Controller
 
         // Statistik dokumen kontrak dihitung secara dinamis dari tabel kontrak di MySQL
         $allKontrak = Kontrak::all();
+        $totalVendors = Vendor::count();
         $totalDokumen = $allKontrak->count();
         $kontrakAktif = $allKontrak->filter(function ($k) {
             return in_array($k->status_kontrak, ['AKTIF', 'Sedang Berjalan']);
@@ -108,6 +110,7 @@ class DashboardApiController extends Controller
                 'aset_tidak_ditemukan' => $asetTidakDitemukan,
                 // Statistik Dokumen Kontrak Dinamis MySQL
                 'total_dokumen' => $totalDokumen,
+                'total_vendor' => $totalVendors,
                 'kontrak_aktif' => $kontrakAktif,
                 'kontrak_akan_berakhir' => $kontrakAkanBerakhir,
                 'kontrak_berakhir' => $kontrakBerakhir,

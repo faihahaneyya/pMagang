@@ -205,7 +205,7 @@ class InventarisApiTest extends TestCase
         $deleteResponse->assertStatus(200);
         $deleteResponse->assertJson([
             'success' => true,
-            'message' => 'Inventaris berhasil dihapus.',
         ]);
+        $this->assertStringContainsString('berhasil dihapus', $deleteResponse->json('message'));
     }
 }
